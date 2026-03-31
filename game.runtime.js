@@ -3,6 +3,7 @@ const GRID_SIZE = 20;
 const START = { x: 0, y: Math.floor(GRID_SIZE / 2) };
 const GOAL = { x: GRID_SIZE - 1, y: Math.floor(GRID_SIZE / 2) };
 const STORAGE_KEY = 'td-config-v13';
+const CONFIG_API_PATH = '/.netlify/functions/config';
 
 const TILE = {
   EMPTY: 'empty',
@@ -378,6 +379,41 @@ function loadConfigFromStorage() {
   }
 }
 function saveConfig(config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); }
+export async function loadConfigFromDatabase() {
+  try {
+    const response = await fetch(CONFIG_API_PATH, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    if (!payload?.config) return null;
+    return deepMerge(DEFAULT_CONFIG, payload.config);
+  } catch {
+    return null;
+  }
+}
+export async function saveConfigToDatabase(config) {
+  const response = await fetch(CONFIG_API_PATH, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ config }),
+  });
+  if (!response.ok) {
+    let message = 'שמירת הקונפיג בדאטאבייס נכשלה';
+    try {
+      const payload = await response.json();
+      if (payload?.error) message = payload.error;
+    } catch {}
+    throw new Error(message);
+  }
+  const payload = await response.json();
+  return payload;
+}
 function getBuildingConfig(config, tile) {
   const map = {
     [TILE.WALL]: config.buildings.wall,
@@ -1097,6 +1133,7 @@ function createUiManager(api) {
   function setConfigDraft(nextDraft) { api.setConfigDraft(nextDraft); }
   function setMessage(text) { api.setMessage(text); }
   function saveConfigToStorage(config) { api.saveConfigToStorage(config); }
+  function saveConfigToDatabase(config) { return api.saveConfigToDatabase(config); }
   function onConfigApplied() { api.onConfigApplied(); }
 
   function getValueByPath(source, dottedPath) {
@@ -1153,17 +1190,25 @@ function createUiManager(api) {
     return errors;
   }
 
-  function applyConfig() {
+  async function applyConfig() {
     readDraftFromInputs();
     const draft = getConfigDraft();
     const errors = validateConfig(draft);
-    if (errors.length) { setMessage(errors[0]); return; }
+    if (errors.length) { setMessage(errors[0]); return false; }
     const nextConfig = deepClone(draft);
     setConfig(nextConfig);
     saveConfigToStorage(nextConfig);
+    let savedToDatabase = false;
+    try {
+      await saveConfigToDatabase(nextConfig);
+      savedToDatabase = true;
+    } catch (error) {
+      console.error(error);
+    }
     onConfigApplied();
     closeConfig();
-    setMessage('הקונפיג נשמר מקומית');
+    setMessage(savedToDatabase ? 'הקונפיג נשמר בדאטאבייס' : 'הקונפיג נשמר מקומית בלבד');
+    return savedToDatabase;
   }
 
   function resetConfig() { setConfigDraft(deepClone(DEFAULT_CONFIG)); renderConfigForm(); }
@@ -1297,6 +1342,7 @@ const ui = createUiManager({
   setConfigDraft: (nextDraft) => { configDraft = nextDraft; },
   onConfigApplied: () => { syncButtonLabels(); renderStatic(); },
   saveConfigToStorage: (config) => saveConfigToStorage(config),
+  saveConfigToDatabase: (config) => saveConfigToDatabase(config),
   setMessage: (text) => setMessage(text),
 });
 
@@ -1434,6 +1480,15 @@ function applyConfig() { ui.applyConfig(); normalizeTowerStats(); renderStatic()
 function resetConfig() { ui.resetConfig(); }
 function exportConfig() { ui.exportConfig(); }
 
+async function syncConfigFromDatabase() {
+  const remoteConfig = await loadConfigFromDatabase();
+  if (!remoteConfig) return false;
+  CONFIG = remoteConfig;
+  configDraft = deepClone(CONFIG);
+  saveConfigToStorage(CONFIG);
+  return true;
+}
+
 function resetGame() { state = createInitialState(); normalizeTowerStats(); selected = null; hoveredCell = null; setCurrentTool(TOOL.SELECT); setMessage(''); renderStatic(); renderDynamic(); }
 function toggleFullscreen() {
   const root = document.documentElement;
@@ -1570,4 +1625,17 @@ destroyBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.D
 
 function frame(now) { const dt = Math.min(0.05, (now - lastFrameTime) / 1000 || 0); lastFrameTime = now; update(dt); renderDynamic(); requestAnimationFrame(frame); }
 
-initBoard(); syncButtonLabels(); setCurrentTool(TOOL.SELECT); renderStatic(); renderDynamic(); requestAnimationFrame(frame);
+async function bootstrap() {
+  const loaded = await syncConfigFromDatabase();
+  state = createInitialState();
+  normalizeTowerStats();
+  initBoard();
+  syncButtonLabels();
+  setCurrentTool(TOOL.SELECT);
+  renderStatic();
+  renderDynamic();
+  if (loaded) setMessage('הקונפיג נטען מהדאטאבייס');
+  requestAnimationFrame(frame);
+}
+
+bootstrap();

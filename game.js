@@ -6,8 +6,10 @@ import {
   TOOL,
   deepClone,
   getBuildingConfig,
+  loadConfigFromDatabase,
   loadConfigFromStorage,
   saveConfig,
+  saveConfigToDatabase,
 } from './src/config.js';
 import { createSimulation } from './src/simulation.js';
 import { createRenderer } from './src/rendering.js';
@@ -125,6 +127,7 @@ const ui = createUiManager({
   setConfigDraft: (nextDraft) => { configDraft = nextDraft; },
   onConfigApplied: () => { syncButtonLabels(); renderStatic(); },
   saveConfigToStorage: (config) => saveConfigToStorage(config),
+  saveConfigToDatabase: (config) => saveConfigToDatabase(config),
   setMessage: (text) => setMessage(text),
 });
 
@@ -262,6 +265,15 @@ function applyConfig() { ui.applyConfig(); normalizeTowerStats(); renderStatic()
 function resetConfig() { ui.resetConfig(); }
 function exportConfig() { ui.exportConfig(); }
 
+async function syncConfigFromDatabase() {
+  const remoteConfig = await loadConfigFromDatabase();
+  if (!remoteConfig) return false;
+  CONFIG = remoteConfig;
+  configDraft = deepClone(CONFIG);
+  saveConfigToStorage(CONFIG);
+  return true;
+}
+
 function resetGame() { state = createInitialState(); normalizeTowerStats(); selected = null; hoveredCell = null; setCurrentTool(TOOL.SELECT); setMessage(''); renderStatic(); renderDynamic(); }
 function toggleFullscreen() {
   const root = document.documentElement;
@@ -398,4 +410,17 @@ destroyBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.D
 
 function frame(now) { const dt = Math.min(0.05, (now - lastFrameTime) / 1000 || 0); lastFrameTime = now; update(dt); renderDynamic(); requestAnimationFrame(frame); }
 
-initBoard(); syncButtonLabels(); setCurrentTool(TOOL.SELECT); renderStatic(); renderDynamic(); requestAnimationFrame(frame);
+async function bootstrap() {
+  const loaded = await syncConfigFromDatabase();
+  state = createInitialState();
+  normalizeTowerStats();
+  initBoard();
+  syncButtonLabels();
+  setCurrentTool(TOOL.SELECT);
+  renderStatic();
+  renderDynamic();
+  if (loaded) setMessage('הקונפיג נטען מהדאטאבייס');
+  requestAnimationFrame(frame);
+}
+
+bootstrap();

@@ -1,0 +1,10 @@
+{
+  "name": "tower-defense",
+  "private": true,
+  "scripts": {
+    "build:runtime": "node tools/build-runtime.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

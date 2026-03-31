@@ -2,6 +2,7 @@ export const GRID_SIZE = 20;
 export const START = { x: 0, y: Math.floor(GRID_SIZE / 2) };
 export const GOAL = { x: GRID_SIZE - 1, y: Math.floor(GRID_SIZE / 2) };
 export const STORAGE_KEY = 'td-config-v13';
+export const CONFIG_API_PATH = '/.netlify/functions/config';
 
 export const TILE = {
   EMPTY: 'empty',
@@ -377,6 +378,41 @@ export function loadConfigFromStorage() {
   }
 }
 export function saveConfig(config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); }
+export async function loadConfigFromDatabase() {
+  try {
+    const response = await fetch(CONFIG_API_PATH, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    if (!payload?.config) return null;
+    return deepMerge(DEFAULT_CONFIG, payload.config);
+  } catch {
+    return null;
+  }
+}
+export async function saveConfigToDatabase(config) {
+  const response = await fetch(CONFIG_API_PATH, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ config }),
+  });
+  if (!response.ok) {
+    let message = 'שמירת הקונפיג בדאטאבייס נכשלה';
+    try {
+      const payload = await response.json();
+      if (payload?.error) message = payload.error;
+    } catch {}
+    throw new Error(message);
+  }
+  const payload = await response.json();
+  return payload;
+}
 export function getBuildingConfig(config, tile) {
   const map = {
     [TILE.WALL]: config.buildings.wall,

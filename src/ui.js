@@ -8,6 +8,7 @@ export function createUiManager(api) {
   function setConfigDraft(nextDraft) { api.setConfigDraft(nextDraft); }
   function setMessage(text) { api.setMessage(text); }
   function saveConfigToStorage(config) { api.saveConfigToStorage(config); }
+  function saveConfigToDatabase(config) { return api.saveConfigToDatabase(config); }
   function onConfigApplied() { api.onConfigApplied(); }
 
   function getValueByPath(source, dottedPath) {
@@ -64,17 +65,25 @@ export function createUiManager(api) {
     return errors;
   }
 
-  function applyConfig() {
+  async function applyConfig() {
     readDraftFromInputs();
     const draft = getConfigDraft();
     const errors = validateConfig(draft);
-    if (errors.length) { setMessage(errors[0]); return; }
+    if (errors.length) { setMessage(errors[0]); return false; }
     const nextConfig = deepClone(draft);
     setConfig(nextConfig);
     saveConfigToStorage(nextConfig);
+    let savedToDatabase = false;
+    try {
+      await saveConfigToDatabase(nextConfig);
+      savedToDatabase = true;
+    } catch (error) {
+      console.error(error);
+    }
     onConfigApplied();
     closeConfig();
-    setMessage('הקונפיג נשמר מקומית');
+    setMessage(savedToDatabase ? 'הקונפיג נשמר בדאטאבייס' : 'הקונפיג נשמר מקומית בלבד');
+    return savedToDatabase;
   }
 
   function resetConfig() { setConfigDraft(deepClone(DEFAULT_CONFIG)); renderConfigForm(); }
