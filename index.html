@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tower Defense Rebuild</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="hud">
+      <div class="brand">Tower Defense</div>
+      <div class="hud-stats" id="hudStats"></div>
+      <div class="hud-actions">
+        <button class="btn-config" id="configBtn" type="button">קונפיג</button>
+        <button class="btn-ghost" id="pauseBtn" type="button">השהה</button>
+        <button class="btn-ghost" id="fullscreenBtn" type="button">מסך מלא</button>
+        <button class="btn-ghost" id="cheatsBtn" type="button">צ'יטים</button>
+        <button class="btn-reset" id="resetBtn" type="button">איפוס</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="play-area">
+        <aside class="side-panel side-panel-left">
+          <section>
+            <h3>סקילים</h3>
+            <div id="skillBar" class="skill-panel panel-empty">כאן יופיעו הסקילים של השחקן.</div>
+          </section>
+        </aside>
+        <div class="board-shell" id="boardShell">
+          <div class="board" id="board"></div>
+          <div class="range-layer" id="rangeLayer"></div>
+          <div class="entities-layer" id="entitiesLayer"></div>
+          <div class="countdown-overlay" id="countdownOverlay"><div class="countdown-card"><div class="countdown-label" id="countdownLabel"></div><div class="countdown-value" id="countdownValue"></div></div></div>
+        </div>
+        <aside class="side-panel side-panel-right">
+          <section>
+            <h3>פרטי יחידה</h3>
+            <div id="unitPanelContent" class="panel-empty">בחר יחידה על המפה כדי לראות את הפרטים שלה.</div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="build-bar" id="buildBar">
+      <div class="mini-panel" id="selectedInfo">מצב: בחירה</div>
+      <div class="build-actions">
+        <button class="btn-wall tool-inactive" id="buildWallBtn" type="button">חומה · 10$</button>
+        <button class="btn-tower tool-inactive" id="buildTowerBtn" type="button">מגדל 1 · 30$</button>
+        <button class="btn-cannon tool-inactive" id="buildCannonBtn" type="button">תותח · 50$</button>
+        <button class="btn-sniper tool-inactive" id="buildSniperBtn" type="button">צלף · 65$</button>
+        <button class="btn-emp tool-inactive" id="buildEmpBtn" type="button">EMP · 45$</button>
+        <button class="btn-railgun tool-inactive" id="buildRailgunBtn" type="button">Railgun · 100$</button>
+        <button class="btn-freeze tool-inactive" id="buildFreezeBtn" type="button">קירור · 55$</button>
+        <button class="btn-aa tool-inactive" id="buildAABtn" type="button">נ"מ · 40$</button>
+        <button class="btn-missile tool-inactive" id="buildMissileBtn" type="button">טילים · 120$</button>
+        <button class="btn-buffer tool-inactive" id="buildBufferBtn" type="button">באף · 60$</button>
+        <button class="btn-flamer tool-inactive" id="buildFlamerBtn" type="button">להביור · 70$</button>
+        <button class="btn-upgrade tool-inactive" id="upgradeModeBtn" type="button">שדרוג</button>
+        <button class="btn-destroy tool-inactive" id="destroyBtn" type="button">הריסה</button>
+      </div>
+      <div class="message" id="message"></div>
+    </footer>
+  </div>
+
+  <div class="overlay" id="configOverlay">
+    <div class="config-modal" role="dialog" aria-modal="true" aria-labelledby="configTitle">
+      <div class="config-head">
+        <h2 id="configTitle">קונפיגורציות</h2>
+        <button class="btn-ghost" id="closeConfigBtn" type="button">סגור</button>
+      </div>
+      <div class="config-grid" id="configGrid"></div>
+      <div class="config-actions">
+        <div class="config-actions-left">
+          <button class="btn-ghost" id="exportConfigBtn" type="button">יצוא JSON</button>
+          <button class="btn-reset" id="resetConfigBtn" type="button">איפוס קונפיג</button>
+        </div>
+        <div class="config-actions-right">
+          <button class="btn-ghost" id="cancelConfigBtn" type="button">ביטול</button>
+          <button class="btn-config" id="saveConfigBtn" type="button">שמור</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="cheatsOverlay">
+    <div class="config-modal" role="dialog" aria-modal="true" aria-labelledby="cheatsTitle" style="width:min(760px,100%);">
+      <div class="config-head">
+        <h2 id="cheatsTitle">צ'יטים</h2>
+        <button class="btn-ghost" id="closeCheatsBtn" type="button">סגור</button>
+      </div>
+      <div class="config-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+        <section class="config-section">
+          <h3>משאבים</h3>
+          <div class="field-grid">
+            <div class="field"><label for="cheatMoneyInput">כסף להוספה</label><input id="cheatMoneyInput" type="number" step="1" value="10000" /></div>
+            <button class="btn-config" id="addMoneyBtn" type="button">הוסף כסף</button>
+          </div>
+        </section>
+        <section class="config-section">
+          <h3>בדיקות גלים</h3>
+          <div class="field-grid">
+            <button class="btn-ghost" id="skipWaveBtn" type="button">סיים גל נוכחי</button>
+            <button class="btn-ghost" id="clearEnemiesBtn" type="button">נקה אויבים</button>
+            <button class="btn-ghost" id="spawnAirBtn" type="button">זמן אויבים אוויריים</button>
+          </div>
+        </section>
+        <section class="config-section">
+          <h3>מבנים</h3>
+          <div class="field-grid">
+            <button class="btn-ghost" id="freeBuildBtn" type="button">בנייה חינם ל-30 שניות</button>
+            <button class="btn-reset" id="maxSelectedBtn" type="button">מקסס מגדל מסומן</button>
+          </div>
+        </section>
+        <section class="config-section">
+          <h3>שליטה</h3>
+          <div class="field-grid">
+            <button class="btn-ghost" id="togglePauseCheatBtn" type="button">השהה / המשך</button>
+            <div class="panel-empty">נבחרו צ'יטים שימושיים ל-QA, איזון ובדיקות מהירות.</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="skillOverlay">
+    <div class="skill-modal" role="dialog" aria-modal="true" aria-labelledby="skillTitle">
+      <div class="config-head">
+        <h2 id="skillTitle">בחירת סקיל</h2>
+      </div>
+      <div id="skillPrompt" class="skill-prompt"></div>
+      <div id="skillChoices" class="skill-choices"></div>
+    </div>
+  </div>
+
+    <script src="game.runtime.js"></script>
+</body>
+</html>
+
+
+
+
