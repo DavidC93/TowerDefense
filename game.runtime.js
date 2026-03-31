@@ -379,7 +379,7 @@ function loadConfigFromStorage() {
   }
 }
 function saveConfig(config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); }
-export async function loadConfigFromDatabase() {
+async function loadConfigFromDatabase() {
   try {
     const response = await fetch(CONFIG_API_PATH, {
       method: 'GET',
@@ -394,7 +394,7 @@ export async function loadConfigFromDatabase() {
     return null;
   }
 }
-export async function saveConfigToDatabase(config) {
+async function saveConfigToDatabase(config) {
   const response = await fetch(CONFIG_API_PATH, {
     method: 'POST',
     headers: {

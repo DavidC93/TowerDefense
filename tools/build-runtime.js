@@ -15,6 +15,7 @@ function transformModule(source) {
   return source
     .replace(/^import\s+.*?;\r?\n/gm, '')
     .replace(/^export\s+const\s+/gm, 'const ')
+    .replace(/^export\s+async\s+function\s+/gm, 'async function ')
     .replace(/^export\s+function\s+/gm, 'function ')
     .trim();
 }
