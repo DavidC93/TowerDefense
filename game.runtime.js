@@ -1382,6 +1382,7 @@ function clearHoveredCell() {
 }
 function setCurrentTool(tool) {
   currentTool = tool;
+  if (supportsPlacementRangePreview(tool)) selected = null;
   if (!supportsPlacementRangePreview(tool)) hoveredCell = null;
   buildWallBtn.classList.toggle('tool-inactive', tool !== TOOL.WALL);
   buildTowerBtn.classList.toggle('tool-inactive', tool !== TOOL.TOWER);
@@ -1415,6 +1416,7 @@ function buildAt(x, y, type) {
     const baseDamage = Number(config.damage ?? 0);
     state.towers[keyOf(x, y)] = { type, cooldown: 0, recoil: 0, level: 0, baseDamage, damage: baseDamage };
   }
+  selected = null;
   simulation.rebuildAllEnemyPaths();
   renderStatic();
 }
@@ -1539,20 +1541,27 @@ boardEl.addEventListener('pointerdown', (event) => {
     }
     return;
   }
+  const clickedTower = state.towers[keyOf(x, y)] || null;
+  if (clickedTower && currentTool !== TOOL.DESTROY && currentTool !== TOOL.UPGRADE) {
+    setCurrentTool(TOOL.SELECT);
+    selectCell(x, y);
+    return;
+  }
+  if (currentTool === TOOL.WALL) { buildAt(x, y, TILE.WALL); return; }
+  if (currentTool === TOOL.TOWER) { buildAt(x, y, TILE.TOWER_BASIC); return; }
+  if (currentTool === TOOL.CANNON) { buildAt(x, y, TILE.TOWER_CANNON); return; }
+  if (currentTool === TOOL.SNIPER) { buildAt(x, y, TILE.TOWER_SNIPER); return; }
+  if (currentTool === TOOL.EMP) { buildAt(x, y, TILE.TOWER_EMP); return; }
+  if (currentTool === TOOL.RAILGUN) { buildAt(x, y, TILE.TOWER_RAILGUN); return; }
+  if (currentTool === TOOL.FREEZE) { buildAt(x, y, TILE.TOWER_FREEZE); return; }
+  if (currentTool === TOOL.AA) { buildAt(x, y, TILE.TOWER_AA); return; }
+  if (currentTool === TOOL.MISSILE) { buildAt(x, y, TILE.TOWER_MISSILE); return; }
+  if (currentTool === TOOL.BUFFER) { buildAt(x, y, TILE.TOWER_BUFFER); return; }
+  if (currentTool === TOOL.FLAMER) { buildAt(x, y, TILE.TOWER_FLAMER); return; }
+  if (currentTool === TOOL.UPGRADE) { upgradeAt(x, y); return; }
+  if (currentTool === TOOL.DESTROY) { destroyAt(x, y); return; }
+  if (state.grid[y][x] !== TILE.EMPTY) setCurrentTool(TOOL.SELECT);
   selectCell(x, y);
-  if (currentTool === TOOL.WALL) buildAt(x, y, TILE.WALL);
-  else if (currentTool === TOOL.TOWER) buildAt(x, y, TILE.TOWER_BASIC);
-  else if (currentTool === TOOL.CANNON) buildAt(x, y, TILE.TOWER_CANNON);
-  else if (currentTool === TOOL.SNIPER) buildAt(x, y, TILE.TOWER_SNIPER);
-  else if (currentTool === TOOL.EMP) buildAt(x, y, TILE.TOWER_EMP);
-  else if (currentTool === TOOL.RAILGUN) buildAt(x, y, TILE.TOWER_RAILGUN);
-  else if (currentTool === TOOL.FREEZE) buildAt(x, y, TILE.TOWER_FREEZE);
-  else if (currentTool === TOOL.AA) buildAt(x, y, TILE.TOWER_AA);
-  else if (currentTool === TOOL.MISSILE) buildAt(x, y, TILE.TOWER_MISSILE);
-  else if (currentTool === TOOL.BUFFER) buildAt(x, y, TILE.TOWER_BUFFER);
-  else if (currentTool === TOOL.FLAMER) buildAt(x, y, TILE.TOWER_FLAMER);
-  else if (currentTool === TOOL.UPGRADE) upgradeAt(x, y);
-  else if (currentTool === TOOL.DESTROY) destroyAt(x, y);
 });
 
 document.addEventListener('pointerdown', (event) => {
