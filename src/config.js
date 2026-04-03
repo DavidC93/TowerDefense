@@ -131,7 +131,20 @@ export const DEFAULT_CONFIG = {
       upgradeBaseCostPct: 40,
       upgradeStepCostPct: 40,
       upgradeDamagePct: 20,
-      maxUpgradeLevel: 10
+      maxUpgradeLevel: 10,
+      premium: {
+        gatling_gun: {
+          enabled: 1,
+          label: 'Gatling Gun',
+          costMultiplier: 10,
+          range: 4,
+          damage: 50,
+          fireRate: 500,
+          canHitAir: 1,
+          airOnly: 0,
+          maxCount: 1
+        }
+      }
     },
     tower_cannon: {
       cost: 50,
@@ -334,7 +347,8 @@ export const CONFIG_SCHEMA = {
   }},
   buildings: { sections: {
     wall: { title: 'חומה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 } } },
-    tower_basic: { title: 'מגדל 1', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_basic: { title: 'מגדל שמירה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_basic_premium: { title: 'מגדל שמירה - פרימיום', fields: { premiumCostMultiplier: { label: 'מכפיל עלות פרימיום', step: 0.1, path: 'buildings.tower_basic.premium.gatling_gun.costMultiplier' }, premiumRange: { label: 'טווח פרימיום', step: 0.1, path: 'buildings.tower_basic.premium.gatling_gun.range' }, premiumDamage: { label: 'נזק פרימיום', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.damage' }, premiumFireRate: { label: 'קצב אש פרימיום (RPM)', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.fireRate' }, premiumCanHitAir: { label: 'פרימיום תוקף אוויר 1/0', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.canHitAir' }, premiumAirOnly: { label: 'פרימיום רק אוויר 1/0', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.airOnly' }, premiumMaxCount: { label: 'מקסימום עותקים פרימיום', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.maxCount' } } },
     tower_cannon: { title: 'תותח', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, splashRadius: { label: 'רדיוס פיצוץ', step: 0.05 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_sniper: { title: 'צלף', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_emp: { title: 'EMP', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, slowPct: { label: 'האטה %', step: 1 }, slowDuration: { label: 'משך האטה', step: 0.1 }, slowUpgradePct: { label: 'תוספת האטה לשדרוג %', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
@@ -413,6 +427,24 @@ export async function saveConfigToDatabase(config) {
   const payload = await response.json();
   return payload;
 }
+export function getPremiumUpgradeConfig(config, tile, premiumKey) {
+  const baseConfig = getBuildingConfig(config, tile);
+  if (!baseConfig?.premium) return null;
+  return baseConfig.premium[premiumKey] || null;
+}
+export function getTowerRuntimeConfig(config, tower, tile) {
+  const baseConfig = getBuildingConfig(config, tile);
+  if (!baseConfig) return null;
+  if (!tower?.premiumKey) return baseConfig;
+  const premiumConfig = getPremiumUpgradeConfig(config, tile, tower.premiumKey);
+  if (!premiumConfig || !Number(premiumConfig.enabled ?? 1)) return baseConfig;
+  return { ...baseConfig, ...premiumConfig };
+}
+export function getTowerDisplayName(config, tile, tower = null) {
+  if (tile === TILE.TOWER_BASIC && tower?.premiumKey === 'gatling_gun') return config?.buildings?.tower_basic?.premium?.gatling_gun?.label || 'Gatling Gun';
+  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל שמירה', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן קירור', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
+  return labels[tile] || tile;
+}
 export function getBuildingConfig(config, tile) {
   const map = {
     [TILE.WALL]: config.buildings.wall,
@@ -430,7 +462,6 @@ export function getBuildingConfig(config, tile) {
   return map[tile] || null;
 }
 export function tileLabel(tile) {
-  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל 1', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן קירור', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
-  return labels[tile] || tile;
+  return getTowerDisplayName(DEFAULT_CONFIG, tile, null);
 }
 

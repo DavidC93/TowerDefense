@@ -6,6 +6,8 @@ import {
   TOOL,
   deepClone,
   getBuildingConfig,
+  getPremiumUpgradeConfig,
+  getTowerRuntimeConfig,
   loadConfigFromDatabase,
   loadConfigFromStorage,
   saveConfig,
@@ -85,8 +87,9 @@ let freeBuildUntil = 0;
 
 function getTileBuildConfig(tile) { return getBuildingConfig(CONFIG, tile); }
 function calculateTowerBaseDamage(tower) {
-  const cfg = getTileBuildConfig(tower.type);
+  const cfg = getTowerRuntimeConfig(CONFIG, tower, tower.type);
   if (!cfg || tower.type === TILE.TOWER_BUFFER) return Number(tower.baseDamage ?? tower.damage ?? 0);
+  if (tower.premiumKey) return Number(cfg.damage ?? tower.baseDamage ?? tower.damage ?? 0);
   const level = Number(tower.level || 0);
   const dmgPct = Number(cfg.upgradeDamagePct ?? 20) / 100;
   let dmg = Number(cfg.damage ?? 0);
@@ -115,6 +118,7 @@ const renderer = createRenderer({
   getSelectedTower: () => getSelectedTower(),
   getState: () => state,
   getUpgradeCost: (tower) => getUpgradeCost(tower),
+  getUpgradeContext: (tower) => getUpgradeContext(tower),
   upgradeSelectedTower: () => upgradeSelectedTower(),
   chooseSkill: (skillKey) => chooseSkill(skillKey),
   activateSkill: (skillKey) => activateSkill(skillKey),
@@ -216,22 +220,73 @@ function destroyAt(x, y) {
   renderStatic();
 }
 function getSelectedTower() { if (!selected) return null; return state.towers[keyOf(selected.x, selected.y)] || null; }
+function getPremiumUpgradeKey(tower) {
+  if (!tower || tower.type !== TILE.TOWER_BASIC) return null;
+  return 'gatling_gun';
+}
+function getPremiumUpgradeData(tower) {
+  const premiumKey = getPremiumUpgradeKey(tower);
+  if (!premiumKey) return null;
+  const premiumConfig = getPremiumUpgradeConfig(CONFIG, tower.type, premiumKey);
+  if (!premiumConfig || !Number(premiumConfig.enabled ?? 1)) return null;
+  return { premiumKey, premiumConfig };
+}
+function countPremiumTowers(towerType, premiumKey) {
+  return Object.values(state.towers).filter((tower) => tower?.type === towerType && tower?.premiumKey === premiumKey).length;
+}
+function getPremiumUpgradeCost(tower) {
+  const premiumData = getPremiumUpgradeData(tower);
+  if (!premiumData) return 0;
+  const baseConfig = getTileBuildConfig(tower.type);
+  return Math.round(Number(baseConfig.cost || 0) * Number(premiumData.premiumConfig.costMultiplier || 10));
+}
+function getUpgradeContext(tower) {
+  if (!tower) return { mode: 'none', cost: 0, disabled: true, buttonLabel: 'שדרג' };
+  const cfg = getTileBuildConfig(tower.type);
+  const maxLevel = Number(cfg.maxUpgradeLevel ?? 10);
+  const level = Number(tower.level || 0);
+  if (tower.premiumKey) return { mode: 'none', cost: 0, disabled: true, buttonLabel: 'פרימיום', reason: 'premium' };
+  if (level < maxLevel) return { mode: 'standard', cost: getUpgradeCost(tower), disabled: false, buttonLabel: 'שדרג' };
+  const premiumData = getPremiumUpgradeData(tower);
+  if (!premiumData) return { mode: 'none', cost: 0, disabled: true, buttonLabel: 'מקסימום', reason: 'maxed' };
+  const maxCount = Math.max(1, Number(premiumData.premiumConfig.maxCount || 1));
+  if (countPremiumTowers(tower.type, premiumData.premiumKey) >= maxCount) return { mode: 'premium', cost: getPremiumUpgradeCost(tower), disabled: true, buttonLabel: 'פרימיום תפוס', reason: 'limit' };
+  return { mode: 'premium', cost: getPremiumUpgradeCost(tower), disabled: false, buttonLabel: 'שדרוג פרימיום', premiumKey: premiumData.premiumKey, premiumConfig: premiumData.premiumConfig };
+}
 function getUpgradeCost(tower) {
   const cfg = getTileBuildConfig(tower.type), baseCost = Number(cfg.cost), startPct = Number(cfg.upgradeBaseCostPct ?? 40), stepPct = Number(cfg.upgradeStepCostPct ?? 40), level = Number(tower.level || 0), percent = startPct + (level * stepPct);
   return Math.round(baseCost * percent / 100);
 }
 function upgradeTower(tower) {
   if (!tower) return false;
-  const cfg = getTileBuildConfig(tower.type), cost = getUpgradeCost(tower), maxLevel = Number(cfg.maxUpgradeLevel ?? 10);
-  if (Number(tower.level || 0) >= maxLevel) { setMessage('הגעת לרמה המקסימלית'); return false; }
-  if (state.money < cost) { setMessage('אין מספיק כסף לשדרוג'); return false; }
+  const cfg = getTileBuildConfig(tower.type);
+  const upgrade = getUpgradeContext(tower);
+  if (upgrade.disabled) {
+    if (upgrade.reason === 'limit') setMessage('כבר קיים מגדל פרימיום מהסוג הזה');
+    else if (upgrade.reason === 'premium') setMessage('מגדל פרימיום לא ניתן לשדרוג נוסף');
+    else setMessage('הגעת לרמה המקסימלית');
+    return false;
+  }
+  if (state.money < upgrade.cost) { setMessage(upgrade.mode === 'premium' ? 'אין מספיק כסף לשדרוג פרימיום' : 'אין מספיק כסף לשדרוג'); return false; }
+  if (upgrade.mode === 'premium') {
+    tower.premiumKey = upgrade.premiumKey;
+    tower.baseDamage = Number(upgrade.premiumConfig.damage ?? tower.baseDamage ?? tower.damage ?? 0);
+    tower.damage = tower.baseDamage;
+    tower.cooldown = 0;
+    tower.recoil = 0;
+    state.money -= upgrade.cost;
+    normalizeTowerStats();
+    renderStatic();
+    setMessage(`שודרג ל-${upgrade.premiumConfig.label || 'Premium'}`);
+    return true;
+  }
   if (tower.type !== TILE.TOWER_BUFFER) {
     const dmgPct = Number(cfg.upgradeDamagePct ?? 20);
     tower.baseDamage = Math.round(Number(tower.baseDamage ?? tower.damage) * (1 + dmgPct / 100));
     tower.damage = tower.baseDamage;
   }
   tower.level = Number(tower.level || 0) + 1;
-  state.money -= cost;
+  state.money -= upgrade.cost;
   normalizeTowerStats();
   renderStatic();
   setMessage('שודרג');
@@ -362,7 +417,14 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-pauseBtn.addEventListener('click', () => { if (!state.pendingSkillChoice) state.running = !state.running; renderHud(); });
+pauseBtn.addEventListener('click', () => {
+  if (state.pendingSkillChoice) return;
+  if (!state.hasStarted) {
+    state.hasStarted = true;
+    state.running = true;
+  } else state.running = !state.running;
+  renderHud();
+});
 fullscreenBtn.addEventListener('click', toggleFullscreen);
 cheatsBtn.addEventListener('click', openCheats);
 resetBtn.addEventListener('click', resetGame);
@@ -401,7 +463,12 @@ maxSelectedBtn.addEventListener('click', () => {
   }
   renderStatic(); setMessage('המגדל הועלה למקסימום');
 });
-togglePauseCheatBtn.addEventListener('click', () => { if (!state.pendingSkillChoice) state.running = !state.running; renderHud(); });
+togglePauseCheatBtn.addEventListener('click', () => {
+  if (state.pendingSkillChoice) return;
+  if (!state.hasStarted) state.hasStarted = true;
+  state.running = !state.running;
+  renderHud();
+});
 
 buildWallBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.WALL ? TOOL.SELECT : TOOL.WALL));
 buildTowerBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.TOWER ? TOOL.SELECT : TOOL.TOWER));

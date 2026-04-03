@@ -1,6 +1,18 @@
-import { GOAL, GRID_SIZE, START, TILE, TOOL, getBuildingConfig, tileLabel } from './config.js';
+import { GOAL, GRID_SIZE, START, TILE, TOOL, getBuildingConfig, getTowerDisplayName } from './config.js';
 
 const RENDER_ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
+const TOOL_PREVIEW_MAP = {
+  [TOOL.TOWER]: { tile: TILE.TOWER_BASIC, label: 'GS' },
+  [TOOL.CANNON]: { tile: TILE.TOWER_CANNON, label: 'C' },
+  [TOOL.SNIPER]: { tile: TILE.TOWER_SNIPER, label: 'S' },
+  [TOOL.EMP]: { tile: TILE.TOWER_EMP, label: 'E' },
+  [TOOL.RAILGUN]: { tile: TILE.TOWER_RAILGUN, label: 'R' },
+  [TOOL.FREEZE]: { tile: TILE.TOWER_FREEZE, label: 'F' },
+  [TOOL.AA]: { tile: TILE.TOWER_AA, label: 'AA' },
+  [TOOL.MISSILE]: { tile: TILE.TOWER_MISSILE, label: 'M' },
+  [TOOL.BUFFER]: { tile: TILE.TOWER_BUFFER, label: 'B' },
+  [TOOL.FLAMER]: { tile: TILE.TOWER_FLAMER, label: 'FL' },
+};
 
 export function createRenderer(api) {
   function getConfig() { return api.getConfig(); }
@@ -10,6 +22,7 @@ export function createRenderer(api) {
   function getCurrentTool() { return api.getCurrentTool(); }
   function getSelectedTower() { return api.getSelectedTower(); }
   function getUpgradeCost(tower) { return api.getUpgradeCost(tower); }
+  function getUpgradeContext(tower) { return api.getUpgradeContext(tower); }
   function upgradeSelectedTower() { return api.upgradeSelectedTower(); }
   function chooseSkill(skillKey) { return api.chooseSkill(skillKey); }
   function activateSkill(skillKey) { return api.activateSkill(skillKey); }
@@ -18,13 +31,14 @@ export function createRenderer(api) {
 
   function cellSizePx() { const rect = getDom().boardEl.getBoundingClientRect(); return rect.width / GRID_SIZE; }
   function cellCenterPx(x, y) { const cell = cellSizePx(); return { x: x * cell + cell / 2, y: y * cell + cell / 2 }; }
+  function towerName(tile, tower = null) { return getTowerDisplayName(getConfig(), tile, tower); }
   function setBuildButtonContent(button, label, cost, iconPath) {
     button.innerHTML = `<span class="build-card-media"><img src="${iconPath}" alt="${label}" /></span><span class="build-card-meta"><span class="build-card-name">${label}</span><span class="build-card-cost">${cost}</span></span>`;
   }
   function syncButtonLabels() {
     const config = getConfig(), dom = getDom();
     setBuildButtonContent(dom.buildWallBtn, 'חומה', `${Math.round(config.buildings.wall.cost)}$`, 'assets/towers/wall.svg');
-    setBuildButtonContent(dom.buildTowerBtn, 'מגדל 1', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg');
+    setBuildButtonContent(dom.buildTowerBtn, 'מגדל שמירה', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg');
     setBuildButtonContent(dom.buildCannonBtn, 'תותח', `${Math.round(config.buildings.tower_cannon.cost)}$`, 'assets/towers/cannon.svg');
     setBuildButtonContent(dom.buildSniperBtn, 'צלף', `${Math.round(config.buildings.tower_sniper.cost)}$`, 'assets/towers/sniper.svg');
     setBuildButtonContent(dom.buildEmpBtn, 'EMP', `${Math.round(config.buildings.tower_emp.cost)}$`, 'assets/towers/emp.svg');
@@ -69,31 +83,33 @@ export function createRenderer(api) {
     const passiveText = ['tower_damage', 'tower_fire_rate', 'tower_range', 'tower_money']
       .map((key) => `${skillLabel(key)} +${simulation.getPassiveBonusPct(key).toFixed(1).replace(/\.0$/, '')}%`)
       .join(' | ');
-    const countdownChip = Number(state.preWaveCountdown || 0) > 0 ? `<div class="chip chip-warn">הגל מתחיל בעוד ${Math.ceil(state.preWaveCountdown)}</div>` : '';
+    const countdownChip = state.hasStarted && Number(state.preWaveCountdown || 0) > 0 ? `<div class="chip chip-warn">הגל מתחיל בעוד ${Math.ceil(state.preWaveCountdown)}</div>` : '';
     dom.hudStatsEl.innerHTML = `<div class="chip">$ ${state.money}</div><div class="chip">גל ${state.wave}</div><div class="chip">רמת אויב ${simulation.getEnemyLevelForWave(state.wave)}</div><div class="chip">קרקע ${byType.grunt + byType.fast + byType.tank}</div><div class="chip">אוויר ${byType.flyer + byType.flyer_heavy}</div><div class="chip">מיני בוס ${byType.miniboss}</div><div class="chip">בוס ${byType.boss}</div><div class="chip">חיסולים ${state.killed}</div><div class="chip">דליפות ${state.leaked}</div>${countdownChip}<div class="chip">${passiveText}</div>`;
-    dom.pauseBtn.textContent = state.running ? 'השהה' : 'המשך';
+    dom.pauseBtn.textContent = state.hasStarted ? (state.running ? 'השהה' : 'המשך') : 'התחל';
+    dom.pauseBtn.classList.toggle('btn-start-pulse', !state.hasStarted);
   }
   function renderSelectedInfo() {
     const dom = getDom(), selected = getSelected(), state = getState();
-    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל 1', [TOOL.CANNON]: 'תותח', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן קירור', [TOOL.AA]: 'נ"מ', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
+    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן קירור', [TOOL.AA]: 'נ"מ', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
     if (state.skills.pendingTargetSkill) { dom.selectedInfoEl.textContent = `בחר משבצת עבור ${skillLabel(state.skills.pendingTargetSkill)}`; return; }
     if (state.pendingSkillChoice) { dom.selectedInfoEl.textContent = 'המשחק ממתין לבחירת סקיל'; return; }
     if (!selected) { dom.selectedInfoEl.textContent = `מצב: ${labels[getCurrentTool()]}`; return; }
     const tile = state.grid[selected.y][selected.x], tower = getSelectedTower();
-    let text = `מצב: ${labels[getCurrentTool()]} · ${tileLabel(tile)}`;
-    if (tower) text += ` · רמה ${tower.level || 0}`;
+    let text = `מצב: ${labels[getCurrentTool()]} · ${towerName(tile, tower)}`;
+    if (tower) text += tower.premiumKey ? ' · פרימיום' : ` · רמה ${tower.level || 0}`;
     dom.selectedInfoEl.textContent = text;
   }
   function renderGrid() {
-    const dom = getDom(), selected = getSelected(), state = getState(), simulation = getSimulation();
+    const dom = getDom(), selected = getSelected(), hoveredCell = getHoveredCell(), state = getState(), simulation = getSimulation(), currentTool = getCurrentTool();
+    const preview = TOOL_PREVIEW_MAP[currentTool] || null;
     for (let y = 0; y < GRID_SIZE; y += 1) {
       for (let x = 0; x < GRID_SIZE; x += 1) {
-        const button = dom.cellButtons[y][x], tile = state.grid[y][x];
+        const button = dom.cellButtons[y][x], tile = state.grid[y][x], tower = state.towers[simulation.keyOf(x, y)] || null;
         button.className = 'cell'; button.textContent = ''; button.innerHTML = '';
         if (x === START.x && y === START.y) { button.classList.add('start'); button.textContent = 'S'; }
         else if (x === GOAL.x && y === GOAL.y) { button.classList.add('goal'); button.textContent = 'E'; }
         else if (tile === TILE.WALL) button.classList.add('wall');
-        else if (tile === TILE.TOWER_BASIC) { button.classList.add('tower_basic'); button.textContent = 'T1'; }
+        else if (tile === TILE.TOWER_BASIC) { button.classList.add('tower_basic'); button.textContent = tower?.premiumKey === 'gatling_gun' ? 'GG' : 'GS'; }
         else if (tile === TILE.TOWER_CANNON) { button.classList.add('tower_cannon'); button.textContent = 'C'; }
         else if (tile === TILE.TOWER_SNIPER) { button.classList.add('tower_sniper'); button.textContent = 'S'; }
         else if (tile === TILE.TOWER_EMP) { button.classList.add('tower_emp'); button.textContent = 'E'; }
@@ -103,14 +119,19 @@ export function createRenderer(api) {
         else if (tile === TILE.TOWER_MISSILE) { button.classList.add('tower_missile'); button.textContent = 'M'; }
         else if (tile === TILE.TOWER_BUFFER) { button.classList.add('tower_buffer'); button.textContent = 'B'; }
         else if (tile === TILE.TOWER_FLAMER) { button.classList.add('tower_flamer'); button.textContent = 'FL'; }
-        const tower = state.towers[simulation.keyOf(x, y)];
         if (tower) {
           const level = tower.level || 0;
-          if (level > 0) {
+          if (level > 0 && !tower.premiumKey) {
             const base = button.textContent;
-            button.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;line-height:1;"><div>${base}</div><div style="font-size:9px;margin-top:2px;opacity:0.95;">L${level}</div></div>`;
+            button.innerHTML = `<div class="cell-stack"><div>${base}</div><div class="cell-level">L${level}</div></div>`;
+          } else {
+            button.innerHTML = `<div class="cell-stack${tower.premiumKey ? ' preview-stack' : ''}"><div>${button.textContent}</div>${tower.premiumKey ? '<div class="cell-level premium-badge">PREM</div>' : ''}</div>`;
           }
+          if (tower.premiumKey) button.classList.add('premium');
           if (tower.recoil > 0) button.classList.add('recoil');
+        } else if (preview && hoveredCell && hoveredCell.x === x && hoveredCell.y === y && tile === TILE.EMPTY && !(x === START.x && y === START.y) && !(x === GOAL.x && y === GOAL.y)) {
+          button.classList.add(preview.tile, 'preview');
+          button.innerHTML = `<div class="cell-stack preview-stack"><div>${preview.label}</div></div>`;
         }
         if (selected && selected.x === x && selected.y === y) button.classList.add('selected');
       }
@@ -126,8 +147,7 @@ export function createRenderer(api) {
       const cfg = getBuildingConfig(getConfig(), tile);
       if (cfg) source = { x: selected.x, y: selected.y, range: tower ? simulation.getTowerRange(tower, tile) : (cfg.range ?? cfg.auraRange ?? cfg.flameLength) };
     } else if (!state.pendingSkillChoice && !state.skills.pendingTargetSkill && hoveredCell) {
-      const toolToTile = { [TOOL.TOWER]: TILE.TOWER_BASIC, [TOOL.CANNON]: TILE.TOWER_CANNON, [TOOL.SNIPER]: TILE.TOWER_SNIPER, [TOOL.EMP]: TILE.TOWER_EMP, [TOOL.RAILGUN]: TILE.TOWER_RAILGUN, [TOOL.FREEZE]: TILE.TOWER_FREEZE, [TOOL.AA]: TILE.TOWER_AA, [TOOL.MISSILE]: TILE.TOWER_MISSILE, [TOOL.BUFFER]: TILE.TOWER_BUFFER, [TOOL.FLAMER]: TILE.TOWER_FLAMER };
-      const tileType = toolToTile[tool];
+      const tileType = TOOL_PREVIEW_MAP[tool]?.tile;
       const cfg = tileType ? getBuildingConfig(getConfig(), tileType) : null;
       if (cfg) source = { x: hoveredCell.x, y: hoveredCell.y, range: Number(cfg.range ?? cfg.auraRange ?? cfg.flameLength ?? 0) };
     }
@@ -194,20 +214,27 @@ export function createRenderer(api) {
     const tile = state.grid[selected.y][selected.x];
     if (tile === TILE.EMPTY) { dom.unitPanelContentEl.className = 'panel-empty'; dom.unitPanelContentEl.innerHTML = 'המשבצת ריקה.'; return; }
     const tower = getSelectedTower(), cfg = getBuildingConfig(getConfig(), tile);
-    if (!tower) { dom.unitPanelContentEl.className = ''; dom.unitPanelContentEl.innerHTML = `<div class="panel-stats"><div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${tileLabel(tile)}</div></div></div>`; return; }
-    const cost = getUpgradeCost(tower), maxLevel = Number(cfg.maxUpgradeLevel ?? 10), isMaxed = Number(tower.level || 0) >= maxLevel;
+    if (!tower) { dom.unitPanelContentEl.className = ''; dom.unitPanelContentEl.innerHTML = `<div class="panel-stats"><div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tile)}</div></div></div>`; return; }
+    const upgrade = getUpgradeContext(tower), cost = upgrade.cost, maxLevel = Number(cfg.maxUpgradeLevel ?? 10), isMaxed = Number(tower.level || 0) >= maxLevel;
     let inner = '';
     if (tower.type === TILE.TOWER_BUFFER) {
       const level = Number(tower.level || 0), currentBonus = Number(cfg.damageBuffPct || 0) + Number(cfg.upgradeDamagePct || 0) * level, nextBonus = Number(cfg.damageBuffPct || 0) + Number(cfg.upgradeDamagePct || 0) * (level + 1);
-      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${tileLabel(tower.type)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.level || 0} / ${maxLevel}</div></div><div class="panel-stat"><div class="panel-label">הילה עכשיו</div><div class="panel-value">נזק +${currentBonus}% | קצב +${currentBonus}%</div></div><div class="panel-stat"><div class="panel-label">הילה אחרי שדרוג</div><div class="panel-value">נזק +${nextBonus}% | קצב +${nextBonus}%</div></div><div class="panel-stat"><div class="panel-label">טווח הילה</div><div class="panel-value">8 משבצות סביב</div></div><div class="panel-stat"><div class="panel-label">עלות שדרוג</div><div class="panel-value">${isMaxed ? 'MAX' : `${cost}$`}</div></div>`;
+      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tower.type, tower)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.level || 0} / ${maxLevel}</div></div><div class="panel-stat"><div class="panel-label">הילה עכשיו</div><div class="panel-value">נזק +${currentBonus}% | קצב +${currentBonus}%</div></div><div class="panel-stat"><div class="panel-label">הילה אחרי שדרוג</div><div class="panel-value">נזק +${nextBonus}% | קצב +${nextBonus}%</div></div><div class="panel-stat"><div class="panel-label">טווח הילה</div><div class="panel-value">8 משבצות סביב</div></div><div class="panel-stat"><div class="panel-label">עלות שדרוג</div><div class="panel-value">${isMaxed ? 'MAX' : `${cost}$`}</div></div>`;
     } else {
-      const buffs = simulation.getAdjacentBuffs(selected.x, selected.y), nextBaseDamage = Math.round(Number(tower.baseDamage ?? tower.damage) * (1 + Number(cfg.upgradeDamagePct ?? 20) / 100)), slowNow = simulation.getTowerSlowPct(tower, tower.type), slowNext = Number(cfg.slowPct || 0) + ((Number(tower.level || 0) + 1) * Number(cfg.slowUpgradePct || 0));
-      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${tileLabel(tower.type)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.level || 0} / ${maxLevel}</div></div><div class="panel-stat"><div class="panel-label">נזק עכשיו</div><div class="panel-value">${simulation.getTowerDamage(tower, tower.type, selected.x, selected.y)}</div></div><div class="panel-stat"><div class="panel-label">קצב אש</div><div class="panel-value">${simulation.getTowerFireRate(tower, tower.type, selected.x, selected.y).toFixed(1).replace(/\.0$/, '')} יריות לדקה</div></div><div class="panel-stat"><div class="panel-label">נזק אחרי שדרוג</div><div class="panel-value">${Math.round(nextBaseDamage * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}</div></div><div class="panel-stat"><div class="panel-label">טווח</div><div class="panel-value">${simulation.getTowerRange(tower, tower.type).toFixed(2).replace(/\.00$/, '')}</div></div>${cfg.slowPct ? `<div class="panel-stat"><div class="panel-label">האטה עכשיו</div><div class="panel-value">${slowNow}%</div></div><div class="panel-stat"><div class="panel-label">האטה אחרי שדרוג</div><div class="panel-value">${slowNext}%</div></div>` : ''}${cfg.burnDps ? `<div class="panel-stat"><div class="panel-label">שריפה</div><div class="panel-value">${Number(cfg.burnDps || 0)} DPS / ${Number(cfg.burnDuration || 0)} שנ'</div></div>` : ''}<div class="panel-stat"><div class="panel-label">עלות שדרוג</div><div class="panel-value">${isMaxed ? 'MAX' : `${cost}$`}</div></div>`;
+      const buffs = simulation.getAdjacentBuffs(selected.x, selected.y);
+      const nextBaseDamage = Math.round(Number(tower.baseDamage ?? tower.damage) * (1 + Number(cfg.upgradeDamagePct ?? 20) / 100));
+      const slowNow = simulation.getTowerSlowPct(tower, tower.type), slowNext = Number(cfg.slowPct || 0) + ((Number(tower.level || 0) + 1) * Number(cfg.slowUpgradePct || 0));
+      const nextDamageText = tower.premiumKey ? 'MAX' : (upgrade.mode === 'premium' ? `${Math.round(Number(upgrade.premiumConfig.damage || 0) * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}` : `${Math.round(nextBaseDamage * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}`);
+      const upgradeLabel = tower.premiumKey ? 'סטטוס שדרוג' : (upgrade.mode === 'premium' ? 'עלות פרימיום' : 'עלות שדרוג');
+      const upgradeCostText = tower.premiumKey ? 'לא ניתן' : (upgrade.disabled && upgrade.reason === 'limit' ? 'תפוס' : `${cost}$`);
+      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tower.type, tower)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.premiumKey ? 'פרימיום' : `${tower.level || 0} / ${maxLevel}`}</div></div><div class="panel-stat"><div class="panel-label">נזק עכשיו</div><div class="panel-value">${simulation.getTowerDamage(tower, tower.type, selected.x, selected.y)}</div></div><div class="panel-stat"><div class="panel-label">קצב אש</div><div class="panel-value">${simulation.getTowerFireRate(tower, tower.type, selected.x, selected.y).toFixed(1).replace(/\.0$/, '')} יריות לדקה</div></div><div class="panel-stat"><div class="panel-label">${upgrade.mode === 'premium' ? 'נזק בפרימיום' : 'נזק אחרי שדרוג'}</div><div class="panel-value">${nextDamageText}</div></div><div class="panel-stat"><div class="panel-label">טווח</div><div class="panel-value">${simulation.getTowerRange(tower, tower.type).toFixed(2).replace(/\.00$/, '')}</div></div>${cfg.slowPct ? `<div class="panel-stat"><div class="panel-label">האטה עכשיו</div><div class="panel-value">${slowNow}%</div></div><div class="panel-stat"><div class="panel-label">האטה אחרי שדרוג</div><div class="panel-value">${slowNext}%</div></div>` : ''}${cfg.burnDps ? `<div class="panel-stat"><div class="panel-label">שריפה</div><div class="panel-value">${Number(cfg.burnDps || 0)} DPS / ${Number(cfg.burnDuration || 0)} שנ'</div></div>` : ''}<div class="panel-stat"><div class="panel-label">${upgradeLabel}</div><div class="panel-value">${upgradeCostText}</div></div>`;
+      if (tower.premiumKey) inner += `<div class="panel-stat premium-summary"><div class="panel-label">סוג</div><div class="panel-value">מגדל פרימיום פעיל</div></div>`;
       if (buffs.damageBuffPct || buffs.fireRateBuffPct || simulation.getPassiveBonusPct('tower_damage') || simulation.getPassiveBonusPct('tower_fire_rate') || simulation.getPassiveBonusPct('tower_range') || simulation.getPassiveBonusPct('tower_money')) inner += `<div class="panel-stat"><div class="panel-label">בונוסים פעילים</div><div class="panel-value">הילה: נזק +${buffs.damageBuffPct}% | קצב +${buffs.fireRateBuffPct}%<br />סקילים: נזק +${simulation.getPassiveBonusPct('tower_damage')}% | קצב +${simulation.getPassiveBonusPct('tower_fire_rate')}% | טווח +${simulation.getPassiveBonusPct('tower_range')}% | כסף +${simulation.getPassiveBonusPct('tower_money')}%</div></div>`;
     }
     dom.unitPanelContentEl.className = '';
-    dom.unitPanelContentEl.innerHTML = `<div class="panel-stats">${inner}</div><div class="panel-button-wrap"><button class="btn-upgrade" id="sideUpgradeBtn" type="button" ${isMaxed ? 'disabled' : ''}>${isMaxed ? 'מקסימום' : 'שדרג'}</button></div>`;
-    if (!isMaxed) document.getElementById('sideUpgradeBtn').addEventListener('click', (event) => { event.stopPropagation(); upgradeSelectedTower(); });
+    const buttonDisabled = upgrade.disabled ? 'disabled' : '';
+    dom.unitPanelContentEl.innerHTML = `<div class="panel-stats">${inner}</div><div class="panel-button-wrap"><button class="btn-upgrade premium-button" id="sideUpgradeBtn" type="button" ${buttonDisabled}>${upgrade.buttonLabel}</button></div>`;
+    if (!upgrade.disabled) document.getElementById('sideUpgradeBtn').addEventListener('click', (event) => { event.stopPropagation(); upgradeSelectedTower(); });
   }
   function renderSkillPanel() {
     const dom = getDom(), state = getState(), simulation = getSimulation();
@@ -236,12 +263,11 @@ export function createRenderer(api) {
       const level = skillLevel(skillKey);
       return `<button class="skill-choice" type="button" data-skill-choice="${skillKey}"><span class="skill-choice-head"><span class="skill-choice-title">${skillLabel(skillKey)}</span><span class="skill-choice-level">${level > 0 ? `רמה נוכחית ${level}` : 'חדש'}</span></span><span class="skill-choice-body">${describeNextSkillLevel(skillKey)}</span><span class="skill-choice-body skill-choice-subtle">${level > 0 ? `עכשיו: ${describeSkill(skillKey)}` : 'הסקיל יתווסף למאגר שלך מיד אחרי הבחירה.'}</span></button>`;
     }).join('');
-
   }
   function renderCountdownOverlay() {
     const dom = getDom(), state = getState();
     if (!dom.countdownOverlayEl) return;
-    const visible = Number(state.preWaveCountdown || 0) > 0 && !state.pendingSkillChoice;
+    const visible = state.hasStarted && Number(state.preWaveCountdown || 0) > 0 && !state.pendingSkillChoice;
     dom.countdownOverlayEl.classList.toggle('visible', visible);
     if (!visible) return;
     dom.countdownValueEl.textContent = String(Math.ceil(state.preWaveCountdown));
@@ -263,4 +289,3 @@ export function createRenderer(api) {
   }
   return { cellCenterPx, cellSizePx, initBoard, renderCountdownOverlay, renderDynamic, renderEntities, renderGrid, renderHud, renderRangeIndicator, renderSelectedInfo, renderSkillPanel, renderSkillSelection, renderStatic, renderUnitPanel, syncButtonLabels };
 }
-

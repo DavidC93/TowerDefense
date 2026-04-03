@@ -1,4 +1,4 @@
-import { GOAL, GRID_SIZE, START, TILE, getBuildingConfig } from './config.js';
+import { GOAL, GRID_SIZE, START, TILE, getBuildingConfig, getTowerRuntimeConfig } from './config.js';
 
 const PASSIVE_SKILL_KEYS = ['tower_damage', 'tower_fire_rate', 'tower_range', 'tower_money'];
 const ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
@@ -207,8 +207,9 @@ export function createSimulation(api) {
     }
     state.enemies = survivors; state.leaked += leakedNow;
   }
-  function canTowerHitEnemy(towerType, enemy) {
-    const cfg = getBuildingConfig(getConfig(), towerType);
+  function canTowerHitEnemy(towerOrType, enemy) {
+    const tower = typeof towerOrType === 'string' ? { type: towerOrType } : towerOrType;
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tower?.type);
     if (!cfg) return false;
     const canHitAir = Boolean(Number(cfg.canHitAir ?? 0));
     const airOnly = Boolean(Number(cfg.airOnly ?? 0));
@@ -217,7 +218,7 @@ export function createSimulation(api) {
     return true;
   }
   function getTowerRange(tower, tileType) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     const baseRange = Number(cfg.range ?? cfg.flameLength ?? 0);
     const passiveBonus = getPassiveBonusPct('tower_range');
@@ -235,11 +236,11 @@ export function createSimulation(api) {
     }
     return remaining;
   }
-  function chooseTarget(towerX, towerY, range, towerType) {
+  function chooseTarget(towerX, towerY, range, tower) {
     const state = getState();
     let bestEnemy = null, bestRemainingDistance = Infinity, bestDistanceFromTower = Infinity;
     for (const enemy of state.enemies) {
-      if (enemy.hp <= 0 || !canTowerHitEnemy(towerType, enemy)) continue;
+      if (enemy.hp <= 0 || !canTowerHitEnemy(tower, enemy)) continue;
       const distanceFromTower = Math.hypot(enemy.x - towerX, enemy.y - towerY);
       if (distanceFromTower > range) continue;
       const remainingDistance = getEnemyRemainingDistance(enemy);
@@ -267,7 +268,7 @@ export function createSimulation(api) {
     return { damageBuffPct, fireRateBuffPct };
   }
   function getTowerDamage(tower, tileType, x, y) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     const baseDamage = Number(tower.baseDamage ?? tower.damage ?? cfg.damage ?? 0);
     if (tileType === TILE.TOWER_BUFFER || x == null || y == null) return baseDamage;
@@ -276,12 +277,12 @@ export function createSimulation(api) {
     return Math.round(baseDamage * (1 + (buffs.damageBuffPct + passiveBonus) / 100));
   }
   function getTowerSlowPct(tower, tileType) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     return Number(cfg.slowPct || 0) + (Number(tower.level || 0) * Number(cfg.slowUpgradePct || 0));
   }
   function getTowerFireRate(tower, tileType, x, y) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     const buffs = tileType === TILE.TOWER_BUFFER ? { fireRateBuffPct: 0 } : getAdjacentBuffs(x, y);
     const passiveBonus = getPassiveBonusPct('tower_fire_rate');
@@ -302,29 +303,29 @@ export function createSimulation(api) {
   function updateTowers(dt, nowSec) {
     const state = getState();
     for (const key of Object.keys(state.towers)) {
-      const tower = state.towers[key], [x, y] = key.split(',').map(Number), config = getBuildingConfig(getConfig(), tower.type);
+      const tower = state.towers[key], [x, y] = key.split(',').map(Number), config = getTowerRuntimeConfig(getConfig(), tower, tower.type);
       if (!config) continue;
       tower.cooldown = Math.max(0, tower.cooldown - dt);
       tower.recoil = Math.max(0, (tower.recoil || 0) - dt * 3.5);
       if (tower.cooldown > 0) continue;
       if (tower.type === TILE.TOWER_BUFFER) { tower.cooldown = 0.25; continue; }
       const range = getTowerRange(tower, tower.type);
-      const target = chooseTarget(x, y, range, tower.type);
+      const target = chooseTarget(x, y, range, tower);
       if (!target) continue;
       const damage = getTowerDamage(tower, tower.type, x, y);
       if (tower.type === TILE.TOWER_CANNON) {
-        for (const enemy of state.enemies) if (canTowerHitEnemy(tower.type, enemy) && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= Number(config.splashRadius)) enemy.hp -= damage;
+        for (const enemy of state.enemies) if (canTowerHitEnemy(tower, enemy) && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= Number(config.splashRadius)) enemy.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.12, thick: true });
         state.explosions.push({ x: target.x, y: target.y, radius: Number(config.splashRadius), ttl: 0.18 });
       } else if (tower.type === TILE.TOWER_SNIPER) {
         target.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.14, thick: true, sniper: true });
       } else if (tower.type === TILE.TOWER_EMP) {
-        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower.type, enemy)) continue; if (Math.hypot(enemy.x - x, enemy.y - y) <= range) { enemy.hp -= damage; applySlow(enemy, getTowerSlowPct(tower, tower.type), Number(config.slowDuration), nowSec); } }
+        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; if (Math.hypot(enemy.x - x, enemy.y - y) <= range) { enemy.hp -= damage; applySlow(enemy, getTowerSlowPct(tower, tower.type), Number(config.slowDuration), nowSec); } }
         state.pulses.push({ x, y, radius: range, ttl: 0.22 });
       } else if (tower.type === TILE.TOWER_RAILGUN) {
         const maxTargets = Math.max(1, Math.round(Number(config.pierceCount))), lineWidth = Number(config.lineWidth), dx = target.x - x, dy = target.y - y, targetDistance = Math.hypot(dx, dy) || 1, dirX = dx / targetDistance, dirY = dy / targetDistance, beamEndX = x + dirX * range, beamEndY = y + dirY * range, hits = [];
-        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower.type, enemy)) continue; const fromStart = Math.hypot(enemy.x - x, enemy.y - y); if (fromStart > range) continue; const lineDist = pointLineDistance(enemy.x, enemy.y, x, y, beamEndX, beamEndY), forward = (enemy.x - x) * dirX + (enemy.y - y) * dirY; if (lineDist <= lineWidth && forward >= 0) hits.push({ enemy, forward }); }
+        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; const fromStart = Math.hypot(enemy.x - x, enemy.y - y); if (fromStart > range) continue; const lineDist = pointLineDistance(enemy.x, enemy.y, x, y, beamEndX, beamEndY), forward = (enemy.x - x) * dirX + (enemy.y - y) * dirY; if (lineDist <= lineWidth && forward >= 0) hits.push({ enemy, forward }); }
         hits.sort((a, b) => a.forward - b.forward);
         for (const hit of hits.slice(0, maxTargets)) hit.enemy.hp -= damage;
         state.beams.push({ fromX: x, fromY: y, toX: beamEndX, toY: beamEndY, ttl: 0.1, width: 4, color: 'rgba(239,68,68,0.85)' });
@@ -341,7 +342,7 @@ export function createSimulation(api) {
         const flameLength = range, coneWidth = Number(config.coneWidth || 0.85), dx = target.x - x, dy = target.y - y, baseAngle = Math.atan2(dy, dx), endX = x + Math.cos(baseAngle) * flameLength, endY = y + Math.sin(baseAngle) * flameLength;
         let hitAny = false;
         for (const enemy of state.enemies) {
-          if (!canTowerHitEnemy(tower.type, enemy)) continue;
+          if (!canTowerHitEnemy(tower, enemy)) continue;
           const ex = enemy.x - x, ey = enemy.y - y, dist = Math.hypot(ex, ey);
           if (dist > flameLength) continue;
           const enemyAngle = Math.atan2(ey, ex);
@@ -386,7 +387,7 @@ export function createSimulation(api) {
     state.beams = state.beams.map((x) => ({ ...x, ttl: x.ttl - dt })).filter((x) => x.ttl > 0);
   }
   function createInitialState() {
-    return { grid: createEmptyGrid(), towers: {}, enemies: [], projectiles: [], explosions: [], pulses: [], beams: [], money: 140, wave: 1, running: true, spawnQueue: getWaveEnemyCount(1), specialSpawnQueue: getSpecialWaveSpawns(1), spawnCooldown: 0.6, intermission: 0, enemyId: 1, killed: 0, leaked: 0, pendingSkillChoice: false, preWaveCountdown: getWaveCountdownDuration(), skills: createSkillState() };
+    return { grid: createEmptyGrid(), towers: {}, enemies: [], projectiles: [], explosions: [], pulses: [], beams: [], money: 140, wave: 1, running: false, hasStarted: false, spawnQueue: getWaveEnemyCount(1), specialSpawnQueue: getSpecialWaveSpawns(1), spawnCooldown: 0.6, intermission: 0, enemyId: 1, killed: 0, leaked: 0, pendingSkillChoice: false, preWaveCountdown: getWaveCountdownDuration(), skills: createSkillState() };
   }
   function update(dt) {
     const state = getState();

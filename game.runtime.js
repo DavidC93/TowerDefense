@@ -132,7 +132,20 @@ const DEFAULT_CONFIG = {
       upgradeBaseCostPct: 40,
       upgradeStepCostPct: 40,
       upgradeDamagePct: 20,
-      maxUpgradeLevel: 10
+      maxUpgradeLevel: 10,
+      premium: {
+        gatling_gun: {
+          enabled: 1,
+          label: 'Gatling Gun',
+          costMultiplier: 10,
+          range: 4,
+          damage: 50,
+          fireRate: 500,
+          canHitAir: 1,
+          airOnly: 0,
+          maxCount: 1
+        }
+      }
     },
     tower_cannon: {
       cost: 50,
@@ -335,7 +348,8 @@ const CONFIG_SCHEMA = {
   }},
   buildings: { sections: {
     wall: { title: 'חומה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 } } },
-    tower_basic: { title: 'מגדל 1', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_basic: { title: 'מגדל שמירה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_basic_premium: { title: 'מגדל שמירה - פרימיום', fields: { premiumCostMultiplier: { label: 'מכפיל עלות פרימיום', step: 0.1, path: 'buildings.tower_basic.premium.gatling_gun.costMultiplier' }, premiumRange: { label: 'טווח פרימיום', step: 0.1, path: 'buildings.tower_basic.premium.gatling_gun.range' }, premiumDamage: { label: 'נזק פרימיום', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.damage' }, premiumFireRate: { label: 'קצב אש פרימיום (RPM)', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.fireRate' }, premiumCanHitAir: { label: 'פרימיום תוקף אוויר 1/0', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.canHitAir' }, premiumAirOnly: { label: 'פרימיום רק אוויר 1/0', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.airOnly' }, premiumMaxCount: { label: 'מקסימום עותקים פרימיום', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.maxCount' } } },
     tower_cannon: { title: 'תותח', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, splashRadius: { label: 'רדיוס פיצוץ', step: 0.05 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_sniper: { title: 'צלף', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_emp: { title: 'EMP', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, slowPct: { label: 'האטה %', step: 1 }, slowDuration: { label: 'משך האטה', step: 0.1 }, slowUpgradePct: { label: 'תוספת האטה לשדרוג %', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
@@ -414,6 +428,24 @@ async function saveConfigToDatabase(config) {
   const payload = await response.json();
   return payload;
 }
+function getPremiumUpgradeConfig(config, tile, premiumKey) {
+  const baseConfig = getBuildingConfig(config, tile);
+  if (!baseConfig?.premium) return null;
+  return baseConfig.premium[premiumKey] || null;
+}
+function getTowerRuntimeConfig(config, tower, tile) {
+  const baseConfig = getBuildingConfig(config, tile);
+  if (!baseConfig) return null;
+  if (!tower?.premiumKey) return baseConfig;
+  const premiumConfig = getPremiumUpgradeConfig(config, tile, tower.premiumKey);
+  if (!premiumConfig || !Number(premiumConfig.enabled ?? 1)) return baseConfig;
+  return { ...baseConfig, ...premiumConfig };
+}
+function getTowerDisplayName(config, tile, tower = null) {
+  if (tile === TILE.TOWER_BASIC && tower?.premiumKey === 'gatling_gun') return config?.buildings?.tower_basic?.premium?.gatling_gun?.label || 'Gatling Gun';
+  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל שמירה', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן קירור', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
+  return labels[tile] || tile;
+}
 function getBuildingConfig(config, tile) {
   const map = {
     [TILE.WALL]: config.buildings.wall,
@@ -431,8 +463,7 @@ function getBuildingConfig(config, tile) {
   return map[tile] || null;
 }
 function tileLabel(tile) {
-  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל 1', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן קירור', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
-  return labels[tile] || tile;
+  return getTowerDisplayName(DEFAULT_CONFIG, tile, null);
 }
 
 const PASSIVE_SKILL_KEYS = ['tower_damage', 'tower_fire_rate', 'tower_range', 'tower_money'];
@@ -642,8 +673,9 @@ function createSimulation(api) {
     }
     state.enemies = survivors; state.leaked += leakedNow;
   }
-  function canTowerHitEnemy(towerType, enemy) {
-    const cfg = getBuildingConfig(getConfig(), towerType);
+  function canTowerHitEnemy(towerOrType, enemy) {
+    const tower = typeof towerOrType === 'string' ? { type: towerOrType } : towerOrType;
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tower?.type);
     if (!cfg) return false;
     const canHitAir = Boolean(Number(cfg.canHitAir ?? 0));
     const airOnly = Boolean(Number(cfg.airOnly ?? 0));
@@ -652,7 +684,7 @@ function createSimulation(api) {
     return true;
   }
   function getTowerRange(tower, tileType) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     const baseRange = Number(cfg.range ?? cfg.flameLength ?? 0);
     const passiveBonus = getPassiveBonusPct('tower_range');
@@ -670,11 +702,11 @@ function createSimulation(api) {
     }
     return remaining;
   }
-  function chooseTarget(towerX, towerY, range, towerType) {
+  function chooseTarget(towerX, towerY, range, tower) {
     const state = getState();
     let bestEnemy = null, bestRemainingDistance = Infinity, bestDistanceFromTower = Infinity;
     for (const enemy of state.enemies) {
-      if (enemy.hp <= 0 || !canTowerHitEnemy(towerType, enemy)) continue;
+      if (enemy.hp <= 0 || !canTowerHitEnemy(tower, enemy)) continue;
       const distanceFromTower = Math.hypot(enemy.x - towerX, enemy.y - towerY);
       if (distanceFromTower > range) continue;
       const remainingDistance = getEnemyRemainingDistance(enemy);
@@ -702,7 +734,7 @@ function createSimulation(api) {
     return { damageBuffPct, fireRateBuffPct };
   }
   function getTowerDamage(tower, tileType, x, y) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     const baseDamage = Number(tower.baseDamage ?? tower.damage ?? cfg.damage ?? 0);
     if (tileType === TILE.TOWER_BUFFER || x == null || y == null) return baseDamage;
@@ -711,12 +743,12 @@ function createSimulation(api) {
     return Math.round(baseDamage * (1 + (buffs.damageBuffPct + passiveBonus) / 100));
   }
   function getTowerSlowPct(tower, tileType) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     return Number(cfg.slowPct || 0) + (Number(tower.level || 0) * Number(cfg.slowUpgradePct || 0));
   }
   function getTowerFireRate(tower, tileType, x, y) {
-    const cfg = getBuildingConfig(getConfig(), tileType);
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
     const buffs = tileType === TILE.TOWER_BUFFER ? { fireRateBuffPct: 0 } : getAdjacentBuffs(x, y);
     const passiveBonus = getPassiveBonusPct('tower_fire_rate');
@@ -737,29 +769,29 @@ function createSimulation(api) {
   function updateTowers(dt, nowSec) {
     const state = getState();
     for (const key of Object.keys(state.towers)) {
-      const tower = state.towers[key], [x, y] = key.split(',').map(Number), config = getBuildingConfig(getConfig(), tower.type);
+      const tower = state.towers[key], [x, y] = key.split(',').map(Number), config = getTowerRuntimeConfig(getConfig(), tower, tower.type);
       if (!config) continue;
       tower.cooldown = Math.max(0, tower.cooldown - dt);
       tower.recoil = Math.max(0, (tower.recoil || 0) - dt * 3.5);
       if (tower.cooldown > 0) continue;
       if (tower.type === TILE.TOWER_BUFFER) { tower.cooldown = 0.25; continue; }
       const range = getTowerRange(tower, tower.type);
-      const target = chooseTarget(x, y, range, tower.type);
+      const target = chooseTarget(x, y, range, tower);
       if (!target) continue;
       const damage = getTowerDamage(tower, tower.type, x, y);
       if (tower.type === TILE.TOWER_CANNON) {
-        for (const enemy of state.enemies) if (canTowerHitEnemy(tower.type, enemy) && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= Number(config.splashRadius)) enemy.hp -= damage;
+        for (const enemy of state.enemies) if (canTowerHitEnemy(tower, enemy) && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= Number(config.splashRadius)) enemy.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.12, thick: true });
         state.explosions.push({ x: target.x, y: target.y, radius: Number(config.splashRadius), ttl: 0.18 });
       } else if (tower.type === TILE.TOWER_SNIPER) {
         target.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.14, thick: true, sniper: true });
       } else if (tower.type === TILE.TOWER_EMP) {
-        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower.type, enemy)) continue; if (Math.hypot(enemy.x - x, enemy.y - y) <= range) { enemy.hp -= damage; applySlow(enemy, getTowerSlowPct(tower, tower.type), Number(config.slowDuration), nowSec); } }
+        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; if (Math.hypot(enemy.x - x, enemy.y - y) <= range) { enemy.hp -= damage; applySlow(enemy, getTowerSlowPct(tower, tower.type), Number(config.slowDuration), nowSec); } }
         state.pulses.push({ x, y, radius: range, ttl: 0.22 });
       } else if (tower.type === TILE.TOWER_RAILGUN) {
         const maxTargets = Math.max(1, Math.round(Number(config.pierceCount))), lineWidth = Number(config.lineWidth), dx = target.x - x, dy = target.y - y, targetDistance = Math.hypot(dx, dy) || 1, dirX = dx / targetDistance, dirY = dy / targetDistance, beamEndX = x + dirX * range, beamEndY = y + dirY * range, hits = [];
-        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower.type, enemy)) continue; const fromStart = Math.hypot(enemy.x - x, enemy.y - y); if (fromStart > range) continue; const lineDist = pointLineDistance(enemy.x, enemy.y, x, y, beamEndX, beamEndY), forward = (enemy.x - x) * dirX + (enemy.y - y) * dirY; if (lineDist <= lineWidth && forward >= 0) hits.push({ enemy, forward }); }
+        for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; const fromStart = Math.hypot(enemy.x - x, enemy.y - y); if (fromStart > range) continue; const lineDist = pointLineDistance(enemy.x, enemy.y, x, y, beamEndX, beamEndY), forward = (enemy.x - x) * dirX + (enemy.y - y) * dirY; if (lineDist <= lineWidth && forward >= 0) hits.push({ enemy, forward }); }
         hits.sort((a, b) => a.forward - b.forward);
         for (const hit of hits.slice(0, maxTargets)) hit.enemy.hp -= damage;
         state.beams.push({ fromX: x, fromY: y, toX: beamEndX, toY: beamEndY, ttl: 0.1, width: 4, color: 'rgba(239,68,68,0.85)' });
@@ -776,7 +808,7 @@ function createSimulation(api) {
         const flameLength = range, coneWidth = Number(config.coneWidth || 0.85), dx = target.x - x, dy = target.y - y, baseAngle = Math.atan2(dy, dx), endX = x + Math.cos(baseAngle) * flameLength, endY = y + Math.sin(baseAngle) * flameLength;
         let hitAny = false;
         for (const enemy of state.enemies) {
-          if (!canTowerHitEnemy(tower.type, enemy)) continue;
+          if (!canTowerHitEnemy(tower, enemy)) continue;
           const ex = enemy.x - x, ey = enemy.y - y, dist = Math.hypot(ex, ey);
           if (dist > flameLength) continue;
           const enemyAngle = Math.atan2(ey, ex);
@@ -821,7 +853,7 @@ function createSimulation(api) {
     state.beams = state.beams.map((x) => ({ ...x, ttl: x.ttl - dt })).filter((x) => x.ttl > 0);
   }
   function createInitialState() {
-    return { grid: createEmptyGrid(), towers: {}, enemies: [], projectiles: [], explosions: [], pulses: [], beams: [], money: 140, wave: 1, running: true, spawnQueue: getWaveEnemyCount(1), specialSpawnQueue: getSpecialWaveSpawns(1), spawnCooldown: 0.6, intermission: 0, enemyId: 1, killed: 0, leaked: 0, pendingSkillChoice: false, preWaveCountdown: getWaveCountdownDuration(), skills: createSkillState() };
+    return { grid: createEmptyGrid(), towers: {}, enemies: [], projectiles: [], explosions: [], pulses: [], beams: [], money: 140, wave: 1, running: false, hasStarted: false, spawnQueue: getWaveEnemyCount(1), specialSpawnQueue: getSpecialWaveSpawns(1), spawnCooldown: 0.6, intermission: 0, enemyId: 1, killed: 0, leaked: 0, pendingSkillChoice: false, preWaveCountdown: getWaveCountdownDuration(), skills: createSkillState() };
   }
   function update(dt) {
     const state = getState();
@@ -862,6 +894,18 @@ function createSimulation(api) {
 }
 
 const RENDER_ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
+const TOOL_PREVIEW_MAP = {
+  [TOOL.TOWER]: { tile: TILE.TOWER_BASIC, label: 'GS' },
+  [TOOL.CANNON]: { tile: TILE.TOWER_CANNON, label: 'C' },
+  [TOOL.SNIPER]: { tile: TILE.TOWER_SNIPER, label: 'S' },
+  [TOOL.EMP]: { tile: TILE.TOWER_EMP, label: 'E' },
+  [TOOL.RAILGUN]: { tile: TILE.TOWER_RAILGUN, label: 'R' },
+  [TOOL.FREEZE]: { tile: TILE.TOWER_FREEZE, label: 'F' },
+  [TOOL.AA]: { tile: TILE.TOWER_AA, label: 'AA' },
+  [TOOL.MISSILE]: { tile: TILE.TOWER_MISSILE, label: 'M' },
+  [TOOL.BUFFER]: { tile: TILE.TOWER_BUFFER, label: 'B' },
+  [TOOL.FLAMER]: { tile: TILE.TOWER_FLAMER, label: 'FL' },
+};
 
 function createRenderer(api) {
   function getConfig() { return api.getConfig(); }
@@ -871,6 +915,7 @@ function createRenderer(api) {
   function getCurrentTool() { return api.getCurrentTool(); }
   function getSelectedTower() { return api.getSelectedTower(); }
   function getUpgradeCost(tower) { return api.getUpgradeCost(tower); }
+  function getUpgradeContext(tower) { return api.getUpgradeContext(tower); }
   function upgradeSelectedTower() { return api.upgradeSelectedTower(); }
   function chooseSkill(skillKey) { return api.chooseSkill(skillKey); }
   function activateSkill(skillKey) { return api.activateSkill(skillKey); }
@@ -879,13 +924,14 @@ function createRenderer(api) {
 
   function cellSizePx() { const rect = getDom().boardEl.getBoundingClientRect(); return rect.width / GRID_SIZE; }
   function cellCenterPx(x, y) { const cell = cellSizePx(); return { x: x * cell + cell / 2, y: y * cell + cell / 2 }; }
+  function towerName(tile, tower = null) { return getTowerDisplayName(getConfig(), tile, tower); }
   function setBuildButtonContent(button, label, cost, iconPath) {
     button.innerHTML = `<span class="build-card-media"><img src="${iconPath}" alt="${label}" /></span><span class="build-card-meta"><span class="build-card-name">${label}</span><span class="build-card-cost">${cost}</span></span>`;
   }
   function syncButtonLabels() {
     const config = getConfig(), dom = getDom();
     setBuildButtonContent(dom.buildWallBtn, 'חומה', `${Math.round(config.buildings.wall.cost)}$`, 'assets/towers/wall.svg');
-    setBuildButtonContent(dom.buildTowerBtn, 'מגדל 1', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg');
+    setBuildButtonContent(dom.buildTowerBtn, 'מגדל שמירה', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg');
     setBuildButtonContent(dom.buildCannonBtn, 'תותח', `${Math.round(config.buildings.tower_cannon.cost)}$`, 'assets/towers/cannon.svg');
     setBuildButtonContent(dom.buildSniperBtn, 'צלף', `${Math.round(config.buildings.tower_sniper.cost)}$`, 'assets/towers/sniper.svg');
     setBuildButtonContent(dom.buildEmpBtn, 'EMP', `${Math.round(config.buildings.tower_emp.cost)}$`, 'assets/towers/emp.svg');
@@ -930,31 +976,33 @@ function createRenderer(api) {
     const passiveText = ['tower_damage', 'tower_fire_rate', 'tower_range', 'tower_money']
       .map((key) => `${skillLabel(key)} +${simulation.getPassiveBonusPct(key).toFixed(1).replace(/\.0$/, '')}%`)
       .join(' | ');
-    const countdownChip = Number(state.preWaveCountdown || 0) > 0 ? `<div class="chip chip-warn">הגל מתחיל בעוד ${Math.ceil(state.preWaveCountdown)}</div>` : '';
+    const countdownChip = state.hasStarted && Number(state.preWaveCountdown || 0) > 0 ? `<div class="chip chip-warn">הגל מתחיל בעוד ${Math.ceil(state.preWaveCountdown)}</div>` : '';
     dom.hudStatsEl.innerHTML = `<div class="chip">$ ${state.money}</div><div class="chip">גל ${state.wave}</div><div class="chip">רמת אויב ${simulation.getEnemyLevelForWave(state.wave)}</div><div class="chip">קרקע ${byType.grunt + byType.fast + byType.tank}</div><div class="chip">אוויר ${byType.flyer + byType.flyer_heavy}</div><div class="chip">מיני בוס ${byType.miniboss}</div><div class="chip">בוס ${byType.boss}</div><div class="chip">חיסולים ${state.killed}</div><div class="chip">דליפות ${state.leaked}</div>${countdownChip}<div class="chip">${passiveText}</div>`;
-    dom.pauseBtn.textContent = state.running ? 'השהה' : 'המשך';
+    dom.pauseBtn.textContent = state.hasStarted ? (state.running ? 'השהה' : 'המשך') : 'התחל';
+    dom.pauseBtn.classList.toggle('btn-start-pulse', !state.hasStarted);
   }
   function renderSelectedInfo() {
     const dom = getDom(), selected = getSelected(), state = getState();
-    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל 1', [TOOL.CANNON]: 'תותח', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן קירור', [TOOL.AA]: 'נ"מ', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
+    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן קירור', [TOOL.AA]: 'נ"מ', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
     if (state.skills.pendingTargetSkill) { dom.selectedInfoEl.textContent = `בחר משבצת עבור ${skillLabel(state.skills.pendingTargetSkill)}`; return; }
     if (state.pendingSkillChoice) { dom.selectedInfoEl.textContent = 'המשחק ממתין לבחירת סקיל'; return; }
     if (!selected) { dom.selectedInfoEl.textContent = `מצב: ${labels[getCurrentTool()]}`; return; }
     const tile = state.grid[selected.y][selected.x], tower = getSelectedTower();
-    let text = `מצב: ${labels[getCurrentTool()]} · ${tileLabel(tile)}`;
-    if (tower) text += ` · רמה ${tower.level || 0}`;
+    let text = `מצב: ${labels[getCurrentTool()]} · ${towerName(tile, tower)}`;
+    if (tower) text += tower.premiumKey ? ' · פרימיום' : ` · רמה ${tower.level || 0}`;
     dom.selectedInfoEl.textContent = text;
   }
   function renderGrid() {
-    const dom = getDom(), selected = getSelected(), state = getState(), simulation = getSimulation();
+    const dom = getDom(), selected = getSelected(), hoveredCell = getHoveredCell(), state = getState(), simulation = getSimulation(), currentTool = getCurrentTool();
+    const preview = TOOL_PREVIEW_MAP[currentTool] || null;
     for (let y = 0; y < GRID_SIZE; y += 1) {
       for (let x = 0; x < GRID_SIZE; x += 1) {
-        const button = dom.cellButtons[y][x], tile = state.grid[y][x];
+        const button = dom.cellButtons[y][x], tile = state.grid[y][x], tower = state.towers[simulation.keyOf(x, y)] || null;
         button.className = 'cell'; button.textContent = ''; button.innerHTML = '';
         if (x === START.x && y === START.y) { button.classList.add('start'); button.textContent = 'S'; }
         else if (x === GOAL.x && y === GOAL.y) { button.classList.add('goal'); button.textContent = 'E'; }
         else if (tile === TILE.WALL) button.classList.add('wall');
-        else if (tile === TILE.TOWER_BASIC) { button.classList.add('tower_basic'); button.textContent = 'T1'; }
+        else if (tile === TILE.TOWER_BASIC) { button.classList.add('tower_basic'); button.textContent = tower?.premiumKey === 'gatling_gun' ? 'GG' : 'GS'; }
         else if (tile === TILE.TOWER_CANNON) { button.classList.add('tower_cannon'); button.textContent = 'C'; }
         else if (tile === TILE.TOWER_SNIPER) { button.classList.add('tower_sniper'); button.textContent = 'S'; }
         else if (tile === TILE.TOWER_EMP) { button.classList.add('tower_emp'); button.textContent = 'E'; }
@@ -964,14 +1012,19 @@ function createRenderer(api) {
         else if (tile === TILE.TOWER_MISSILE) { button.classList.add('tower_missile'); button.textContent = 'M'; }
         else if (tile === TILE.TOWER_BUFFER) { button.classList.add('tower_buffer'); button.textContent = 'B'; }
         else if (tile === TILE.TOWER_FLAMER) { button.classList.add('tower_flamer'); button.textContent = 'FL'; }
-        const tower = state.towers[simulation.keyOf(x, y)];
         if (tower) {
           const level = tower.level || 0;
-          if (level > 0) {
+          if (level > 0 && !tower.premiumKey) {
             const base = button.textContent;
-            button.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;line-height:1;"><div>${base}</div><div style="font-size:9px;margin-top:2px;opacity:0.95;">L${level}</div></div>`;
+            button.innerHTML = `<div class="cell-stack"><div>${base}</div><div class="cell-level">L${level}</div></div>`;
+          } else {
+            button.innerHTML = `<div class="cell-stack${tower.premiumKey ? ' preview-stack' : ''}"><div>${button.textContent}</div>${tower.premiumKey ? '<div class="cell-level premium-badge">PREM</div>' : ''}</div>`;
           }
+          if (tower.premiumKey) button.classList.add('premium');
           if (tower.recoil > 0) button.classList.add('recoil');
+        } else if (preview && hoveredCell && hoveredCell.x === x && hoveredCell.y === y && tile === TILE.EMPTY && !(x === START.x && y === START.y) && !(x === GOAL.x && y === GOAL.y)) {
+          button.classList.add(preview.tile, 'preview');
+          button.innerHTML = `<div class="cell-stack preview-stack"><div>${preview.label}</div></div>`;
         }
         if (selected && selected.x === x && selected.y === y) button.classList.add('selected');
       }
@@ -987,8 +1040,7 @@ function createRenderer(api) {
       const cfg = getBuildingConfig(getConfig(), tile);
       if (cfg) source = { x: selected.x, y: selected.y, range: tower ? simulation.getTowerRange(tower, tile) : (cfg.range ?? cfg.auraRange ?? cfg.flameLength) };
     } else if (!state.pendingSkillChoice && !state.skills.pendingTargetSkill && hoveredCell) {
-      const toolToTile = { [TOOL.TOWER]: TILE.TOWER_BASIC, [TOOL.CANNON]: TILE.TOWER_CANNON, [TOOL.SNIPER]: TILE.TOWER_SNIPER, [TOOL.EMP]: TILE.TOWER_EMP, [TOOL.RAILGUN]: TILE.TOWER_RAILGUN, [TOOL.FREEZE]: TILE.TOWER_FREEZE, [TOOL.AA]: TILE.TOWER_AA, [TOOL.MISSILE]: TILE.TOWER_MISSILE, [TOOL.BUFFER]: TILE.TOWER_BUFFER, [TOOL.FLAMER]: TILE.TOWER_FLAMER };
-      const tileType = toolToTile[tool];
+      const tileType = TOOL_PREVIEW_MAP[tool]?.tile;
       const cfg = tileType ? getBuildingConfig(getConfig(), tileType) : null;
       if (cfg) source = { x: hoveredCell.x, y: hoveredCell.y, range: Number(cfg.range ?? cfg.auraRange ?? cfg.flameLength ?? 0) };
     }
@@ -1055,20 +1107,27 @@ function createRenderer(api) {
     const tile = state.grid[selected.y][selected.x];
     if (tile === TILE.EMPTY) { dom.unitPanelContentEl.className = 'panel-empty'; dom.unitPanelContentEl.innerHTML = 'המשבצת ריקה.'; return; }
     const tower = getSelectedTower(), cfg = getBuildingConfig(getConfig(), tile);
-    if (!tower) { dom.unitPanelContentEl.className = ''; dom.unitPanelContentEl.innerHTML = `<div class="panel-stats"><div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${tileLabel(tile)}</div></div></div>`; return; }
-    const cost = getUpgradeCost(tower), maxLevel = Number(cfg.maxUpgradeLevel ?? 10), isMaxed = Number(tower.level || 0) >= maxLevel;
+    if (!tower) { dom.unitPanelContentEl.className = ''; dom.unitPanelContentEl.innerHTML = `<div class="panel-stats"><div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tile)}</div></div></div>`; return; }
+    const upgrade = getUpgradeContext(tower), cost = upgrade.cost, maxLevel = Number(cfg.maxUpgradeLevel ?? 10), isMaxed = Number(tower.level || 0) >= maxLevel;
     let inner = '';
     if (tower.type === TILE.TOWER_BUFFER) {
       const level = Number(tower.level || 0), currentBonus = Number(cfg.damageBuffPct || 0) + Number(cfg.upgradeDamagePct || 0) * level, nextBonus = Number(cfg.damageBuffPct || 0) + Number(cfg.upgradeDamagePct || 0) * (level + 1);
-      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${tileLabel(tower.type)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.level || 0} / ${maxLevel}</div></div><div class="panel-stat"><div class="panel-label">הילה עכשיו</div><div class="panel-value">נזק +${currentBonus}% | קצב +${currentBonus}%</div></div><div class="panel-stat"><div class="panel-label">הילה אחרי שדרוג</div><div class="panel-value">נזק +${nextBonus}% | קצב +${nextBonus}%</div></div><div class="panel-stat"><div class="panel-label">טווח הילה</div><div class="panel-value">8 משבצות סביב</div></div><div class="panel-stat"><div class="panel-label">עלות שדרוג</div><div class="panel-value">${isMaxed ? 'MAX' : `${cost}$`}</div></div>`;
+      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tower.type, tower)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.level || 0} / ${maxLevel}</div></div><div class="panel-stat"><div class="panel-label">הילה עכשיו</div><div class="panel-value">נזק +${currentBonus}% | קצב +${currentBonus}%</div></div><div class="panel-stat"><div class="panel-label">הילה אחרי שדרוג</div><div class="panel-value">נזק +${nextBonus}% | קצב +${nextBonus}%</div></div><div class="panel-stat"><div class="panel-label">טווח הילה</div><div class="panel-value">8 משבצות סביב</div></div><div class="panel-stat"><div class="panel-label">עלות שדרוג</div><div class="panel-value">${isMaxed ? 'MAX' : `${cost}$`}</div></div>`;
     } else {
-      const buffs = simulation.getAdjacentBuffs(selected.x, selected.y), nextBaseDamage = Math.round(Number(tower.baseDamage ?? tower.damage) * (1 + Number(cfg.upgradeDamagePct ?? 20) / 100)), slowNow = simulation.getTowerSlowPct(tower, tower.type), slowNext = Number(cfg.slowPct || 0) + ((Number(tower.level || 0) + 1) * Number(cfg.slowUpgradePct || 0));
-      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${tileLabel(tower.type)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.level || 0} / ${maxLevel}</div></div><div class="panel-stat"><div class="panel-label">נזק עכשיו</div><div class="panel-value">${simulation.getTowerDamage(tower, tower.type, selected.x, selected.y)}</div></div><div class="panel-stat"><div class="panel-label">קצב אש</div><div class="panel-value">${simulation.getTowerFireRate(tower, tower.type, selected.x, selected.y).toFixed(1).replace(/\.0$/, '')} יריות לדקה</div></div><div class="panel-stat"><div class="panel-label">נזק אחרי שדרוג</div><div class="panel-value">${Math.round(nextBaseDamage * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}</div></div><div class="panel-stat"><div class="panel-label">טווח</div><div class="panel-value">${simulation.getTowerRange(tower, tower.type).toFixed(2).replace(/\.00$/, '')}</div></div>${cfg.slowPct ? `<div class="panel-stat"><div class="panel-label">האטה עכשיו</div><div class="panel-value">${slowNow}%</div></div><div class="panel-stat"><div class="panel-label">האטה אחרי שדרוג</div><div class="panel-value">${slowNext}%</div></div>` : ''}${cfg.burnDps ? `<div class="panel-stat"><div class="panel-label">שריפה</div><div class="panel-value">${Number(cfg.burnDps || 0)} DPS / ${Number(cfg.burnDuration || 0)} שנ'</div></div>` : ''}<div class="panel-stat"><div class="panel-label">עלות שדרוג</div><div class="panel-value">${isMaxed ? 'MAX' : `${cost}$`}</div></div>`;
+      const buffs = simulation.getAdjacentBuffs(selected.x, selected.y);
+      const nextBaseDamage = Math.round(Number(tower.baseDamage ?? tower.damage) * (1 + Number(cfg.upgradeDamagePct ?? 20) / 100));
+      const slowNow = simulation.getTowerSlowPct(tower, tower.type), slowNext = Number(cfg.slowPct || 0) + ((Number(tower.level || 0) + 1) * Number(cfg.slowUpgradePct || 0));
+      const nextDamageText = tower.premiumKey ? 'MAX' : (upgrade.mode === 'premium' ? `${Math.round(Number(upgrade.premiumConfig.damage || 0) * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}` : `${Math.round(nextBaseDamage * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}`);
+      const upgradeLabel = tower.premiumKey ? 'סטטוס שדרוג' : (upgrade.mode === 'premium' ? 'עלות פרימיום' : 'עלות שדרוג');
+      const upgradeCostText = tower.premiumKey ? 'לא ניתן' : (upgrade.disabled && upgrade.reason === 'limit' ? 'תפוס' : `${cost}$`);
+      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tower.type, tower)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.premiumKey ? 'פרימיום' : `${tower.level || 0} / ${maxLevel}`}</div></div><div class="panel-stat"><div class="panel-label">נזק עכשיו</div><div class="panel-value">${simulation.getTowerDamage(tower, tower.type, selected.x, selected.y)}</div></div><div class="panel-stat"><div class="panel-label">קצב אש</div><div class="panel-value">${simulation.getTowerFireRate(tower, tower.type, selected.x, selected.y).toFixed(1).replace(/\.0$/, '')} יריות לדקה</div></div><div class="panel-stat"><div class="panel-label">${upgrade.mode === 'premium' ? 'נזק בפרימיום' : 'נזק אחרי שדרוג'}</div><div class="panel-value">${nextDamageText}</div></div><div class="panel-stat"><div class="panel-label">טווח</div><div class="panel-value">${simulation.getTowerRange(tower, tower.type).toFixed(2).replace(/\.00$/, '')}</div></div>${cfg.slowPct ? `<div class="panel-stat"><div class="panel-label">האטה עכשיו</div><div class="panel-value">${slowNow}%</div></div><div class="panel-stat"><div class="panel-label">האטה אחרי שדרוג</div><div class="panel-value">${slowNext}%</div></div>` : ''}${cfg.burnDps ? `<div class="panel-stat"><div class="panel-label">שריפה</div><div class="panel-value">${Number(cfg.burnDps || 0)} DPS / ${Number(cfg.burnDuration || 0)} שנ'</div></div>` : ''}<div class="panel-stat"><div class="panel-label">${upgradeLabel}</div><div class="panel-value">${upgradeCostText}</div></div>`;
+      if (tower.premiumKey) inner += `<div class="panel-stat premium-summary"><div class="panel-label">סוג</div><div class="panel-value">מגדל פרימיום פעיל</div></div>`;
       if (buffs.damageBuffPct || buffs.fireRateBuffPct || simulation.getPassiveBonusPct('tower_damage') || simulation.getPassiveBonusPct('tower_fire_rate') || simulation.getPassiveBonusPct('tower_range') || simulation.getPassiveBonusPct('tower_money')) inner += `<div class="panel-stat"><div class="panel-label">בונוסים פעילים</div><div class="panel-value">הילה: נזק +${buffs.damageBuffPct}% | קצב +${buffs.fireRateBuffPct}%<br />סקילים: נזק +${simulation.getPassiveBonusPct('tower_damage')}% | קצב +${simulation.getPassiveBonusPct('tower_fire_rate')}% | טווח +${simulation.getPassiveBonusPct('tower_range')}% | כסף +${simulation.getPassiveBonusPct('tower_money')}%</div></div>`;
     }
     dom.unitPanelContentEl.className = '';
-    dom.unitPanelContentEl.innerHTML = `<div class="panel-stats">${inner}</div><div class="panel-button-wrap"><button class="btn-upgrade" id="sideUpgradeBtn" type="button" ${isMaxed ? 'disabled' : ''}>${isMaxed ? 'מקסימום' : 'שדרג'}</button></div>`;
-    if (!isMaxed) document.getElementById('sideUpgradeBtn').addEventListener('click', (event) => { event.stopPropagation(); upgradeSelectedTower(); });
+    const buttonDisabled = upgrade.disabled ? 'disabled' : '';
+    dom.unitPanelContentEl.innerHTML = `<div class="panel-stats">${inner}</div><div class="panel-button-wrap"><button class="btn-upgrade premium-button" id="sideUpgradeBtn" type="button" ${buttonDisabled}>${upgrade.buttonLabel}</button></div>`;
+    if (!upgrade.disabled) document.getElementById('sideUpgradeBtn').addEventListener('click', (event) => { event.stopPropagation(); upgradeSelectedTower(); });
   }
   function renderSkillPanel() {
     const dom = getDom(), state = getState(), simulation = getSimulation();
@@ -1097,12 +1156,11 @@ function createRenderer(api) {
       const level = skillLevel(skillKey);
       return `<button class="skill-choice" type="button" data-skill-choice="${skillKey}"><span class="skill-choice-head"><span class="skill-choice-title">${skillLabel(skillKey)}</span><span class="skill-choice-level">${level > 0 ? `רמה נוכחית ${level}` : 'חדש'}</span></span><span class="skill-choice-body">${describeNextSkillLevel(skillKey)}</span><span class="skill-choice-body skill-choice-subtle">${level > 0 ? `עכשיו: ${describeSkill(skillKey)}` : 'הסקיל יתווסף למאגר שלך מיד אחרי הבחירה.'}</span></button>`;
     }).join('');
-
   }
   function renderCountdownOverlay() {
     const dom = getDom(), state = getState();
     if (!dom.countdownOverlayEl) return;
-    const visible = Number(state.preWaveCountdown || 0) > 0 && !state.pendingSkillChoice;
+    const visible = state.hasStarted && Number(state.preWaveCountdown || 0) > 0 && !state.pendingSkillChoice;
     dom.countdownOverlayEl.classList.toggle('visible', visible);
     if (!visible) return;
     dom.countdownValueEl.textContent = String(Math.ceil(state.preWaveCountdown));
@@ -1300,8 +1358,9 @@ let freeBuildUntil = 0;
 
 function getTileBuildConfig(tile) { return getBuildingConfig(CONFIG, tile); }
 function calculateTowerBaseDamage(tower) {
-  const cfg = getTileBuildConfig(tower.type);
+  const cfg = getTowerRuntimeConfig(CONFIG, tower, tower.type);
   if (!cfg || tower.type === TILE.TOWER_BUFFER) return Number(tower.baseDamage ?? tower.damage ?? 0);
+  if (tower.premiumKey) return Number(cfg.damage ?? tower.baseDamage ?? tower.damage ?? 0);
   const level = Number(tower.level || 0);
   const dmgPct = Number(cfg.upgradeDamagePct ?? 20) / 100;
   let dmg = Number(cfg.damage ?? 0);
@@ -1330,6 +1389,7 @@ const renderer = createRenderer({
   getSelectedTower: () => getSelectedTower(),
   getState: () => state,
   getUpgradeCost: (tower) => getUpgradeCost(tower),
+  getUpgradeContext: (tower) => getUpgradeContext(tower),
   upgradeSelectedTower: () => upgradeSelectedTower(),
   chooseSkill: (skillKey) => chooseSkill(skillKey),
   activateSkill: (skillKey) => activateSkill(skillKey),
@@ -1431,22 +1491,73 @@ function destroyAt(x, y) {
   renderStatic();
 }
 function getSelectedTower() { if (!selected) return null; return state.towers[keyOf(selected.x, selected.y)] || null; }
+function getPremiumUpgradeKey(tower) {
+  if (!tower || tower.type !== TILE.TOWER_BASIC) return null;
+  return 'gatling_gun';
+}
+function getPremiumUpgradeData(tower) {
+  const premiumKey = getPremiumUpgradeKey(tower);
+  if (!premiumKey) return null;
+  const premiumConfig = getPremiumUpgradeConfig(CONFIG, tower.type, premiumKey);
+  if (!premiumConfig || !Number(premiumConfig.enabled ?? 1)) return null;
+  return { premiumKey, premiumConfig };
+}
+function countPremiumTowers(towerType, premiumKey) {
+  return Object.values(state.towers).filter((tower) => tower?.type === towerType && tower?.premiumKey === premiumKey).length;
+}
+function getPremiumUpgradeCost(tower) {
+  const premiumData = getPremiumUpgradeData(tower);
+  if (!premiumData) return 0;
+  const baseConfig = getTileBuildConfig(tower.type);
+  return Math.round(Number(baseConfig.cost || 0) * Number(premiumData.premiumConfig.costMultiplier || 10));
+}
+function getUpgradeContext(tower) {
+  if (!tower) return { mode: 'none', cost: 0, disabled: true, buttonLabel: 'שדרג' };
+  const cfg = getTileBuildConfig(tower.type);
+  const maxLevel = Number(cfg.maxUpgradeLevel ?? 10);
+  const level = Number(tower.level || 0);
+  if (tower.premiumKey) return { mode: 'none', cost: 0, disabled: true, buttonLabel: 'פרימיום', reason: 'premium' };
+  if (level < maxLevel) return { mode: 'standard', cost: getUpgradeCost(tower), disabled: false, buttonLabel: 'שדרג' };
+  const premiumData = getPremiumUpgradeData(tower);
+  if (!premiumData) return { mode: 'none', cost: 0, disabled: true, buttonLabel: 'מקסימום', reason: 'maxed' };
+  const maxCount = Math.max(1, Number(premiumData.premiumConfig.maxCount || 1));
+  if (countPremiumTowers(tower.type, premiumData.premiumKey) >= maxCount) return { mode: 'premium', cost: getPremiumUpgradeCost(tower), disabled: true, buttonLabel: 'פרימיום תפוס', reason: 'limit' };
+  return { mode: 'premium', cost: getPremiumUpgradeCost(tower), disabled: false, buttonLabel: 'שדרוג פרימיום', premiumKey: premiumData.premiumKey, premiumConfig: premiumData.premiumConfig };
+}
 function getUpgradeCost(tower) {
   const cfg = getTileBuildConfig(tower.type), baseCost = Number(cfg.cost), startPct = Number(cfg.upgradeBaseCostPct ?? 40), stepPct = Number(cfg.upgradeStepCostPct ?? 40), level = Number(tower.level || 0), percent = startPct + (level * stepPct);
   return Math.round(baseCost * percent / 100);
 }
 function upgradeTower(tower) {
   if (!tower) return false;
-  const cfg = getTileBuildConfig(tower.type), cost = getUpgradeCost(tower), maxLevel = Number(cfg.maxUpgradeLevel ?? 10);
-  if (Number(tower.level || 0) >= maxLevel) { setMessage('הגעת לרמה המקסימלית'); return false; }
-  if (state.money < cost) { setMessage('אין מספיק כסף לשדרוג'); return false; }
+  const cfg = getTileBuildConfig(tower.type);
+  const upgrade = getUpgradeContext(tower);
+  if (upgrade.disabled) {
+    if (upgrade.reason === 'limit') setMessage('כבר קיים מגדל פרימיום מהסוג הזה');
+    else if (upgrade.reason === 'premium') setMessage('מגדל פרימיום לא ניתן לשדרוג נוסף');
+    else setMessage('הגעת לרמה המקסימלית');
+    return false;
+  }
+  if (state.money < upgrade.cost) { setMessage(upgrade.mode === 'premium' ? 'אין מספיק כסף לשדרוג פרימיום' : 'אין מספיק כסף לשדרוג'); return false; }
+  if (upgrade.mode === 'premium') {
+    tower.premiumKey = upgrade.premiumKey;
+    tower.baseDamage = Number(upgrade.premiumConfig.damage ?? tower.baseDamage ?? tower.damage ?? 0);
+    tower.damage = tower.baseDamage;
+    tower.cooldown = 0;
+    tower.recoil = 0;
+    state.money -= upgrade.cost;
+    normalizeTowerStats();
+    renderStatic();
+    setMessage(`שודרג ל-${upgrade.premiumConfig.label || 'Premium'}`);
+    return true;
+  }
   if (tower.type !== TILE.TOWER_BUFFER) {
     const dmgPct = Number(cfg.upgradeDamagePct ?? 20);
     tower.baseDamage = Math.round(Number(tower.baseDamage ?? tower.damage) * (1 + dmgPct / 100));
     tower.damage = tower.baseDamage;
   }
   tower.level = Number(tower.level || 0) + 1;
-  state.money -= cost;
+  state.money -= upgrade.cost;
   normalizeTowerStats();
   renderStatic();
   setMessage('שודרג');
@@ -1577,7 +1688,14 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-pauseBtn.addEventListener('click', () => { if (!state.pendingSkillChoice) state.running = !state.running; renderHud(); });
+pauseBtn.addEventListener('click', () => {
+  if (state.pendingSkillChoice) return;
+  if (!state.hasStarted) {
+    state.hasStarted = true;
+    state.running = true;
+  } else state.running = !state.running;
+  renderHud();
+});
 fullscreenBtn.addEventListener('click', toggleFullscreen);
 cheatsBtn.addEventListener('click', openCheats);
 resetBtn.addEventListener('click', resetGame);
@@ -1616,7 +1734,12 @@ maxSelectedBtn.addEventListener('click', () => {
   }
   renderStatic(); setMessage('המגדל הועלה למקסימום');
 });
-togglePauseCheatBtn.addEventListener('click', () => { if (!state.pendingSkillChoice) state.running = !state.running; renderHud(); });
+togglePauseCheatBtn.addEventListener('click', () => {
+  if (state.pendingSkillChoice) return;
+  if (!state.hasStarted) state.hasStarted = true;
+  state.running = !state.running;
+  renderHud();
+});
 
 buildWallBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.WALL ? TOOL.SELECT : TOOL.WALL));
 buildTowerBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.TOWER ? TOOL.SELECT : TOOL.TOWER));
