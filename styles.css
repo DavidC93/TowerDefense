@@ -134,6 +134,9 @@ input { width: 100%; border: 1px solid var(--border); background: #0f172a; color
 .enemy-hp-fill { height: 100%; background: #22c55e; }
 .projectile { position: absolute; height: 2px; transform-origin: 0 50%; border-radius: 999px; background: var(--projectile); box-shadow: 0 0 10px rgba(253,224,71,0.9); }
 .explosion { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(253,224,71,0.55); background: rgba(253,224,71,0.18); box-shadow: 0 0 18px rgba(253,224,71,0.2); }
+.explosion-nuke { border: 3px solid rgba(253,186,116,0.8); background: radial-gradient(circle, rgba(255,244,214,0.92) 0%, rgba(251,191,36,0.76) 18%, rgba(249,115,22,0.62) 42%, rgba(220,38,38,0.38) 68%, rgba(127,29,29,0.1) 100%); box-shadow: 0 0 30px rgba(251,191,36,0.55), 0 0 78px rgba(249,115,22,0.28); }
+.explosion-shockwave { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); border: 4px solid rgba(254,240,138,0.72); background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(253,224,71,0.06) 40%, rgba(255,255,255,0) 72%); box-shadow: 0 0 42px rgba(253,224,71,0.24); }
+.explosion-flash { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,251,235,0.7) 30%, rgba(255,255,255,0.04) 100%); filter: blur(2px); }
 .pulse { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid rgba(20,184,166,0.45); background: rgba(20,184,166,0.12); }
 .beam { position: absolute; height: 3px; transform-origin: 0 50%; border-radius: 999px; }
 .flame-stream { position: absolute; transform-origin: 0 50%; pointer-events: none; }
@@ -183,6 +186,31 @@ input { width: 100%; border: 1px solid var(--border); background: #0f172a; color
 .build-card-cost {
   font-size: 10px;
   color: rgba(241,245,249,0.82);
+}
+.build-card-lock {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #fde68a;
+}
+.build-card-overlay-lock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  color: rgba(255,255,255,0.55);
+  text-shadow: 0 0 18px rgba(15,23,42,0.55);
+  pointer-events: none;
+}
+.build-actions button.locked-build {
+  background: #1e293b !important;
+  border-style: dashed;
+  border-color: rgba(253,230,138,0.34);
+}
+.build-actions button.locked-build .build-card-media img {
+  opacity: 0.58;
+  filter: grayscale(0.28) drop-shadow(0 2px 6px rgba(0,0,0,0.14));
 }
 .build-actions button.tool-inactive .build-card-media img {
   opacity: 0.7;
@@ -235,6 +263,8 @@ input { width: 100%; border: 1px solid var(--border); background: #0f172a; color
 .skill-choices { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
 .skill-choice { min-height:210px; background:linear-gradient(180deg, rgba(30,41,59,0.98), rgba(15,23,42,0.98)); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; display:grid; gap:12px; align-content:start; text-align:right; }
 .skill-choice:hover { border-color:rgba(94,234,212,0.45); transform:translateY(-2px); }
+.unlock-choice { border-color:rgba(250,204,21,0.22); background:linear-gradient(180deg, rgba(69,39,13,0.98), rgba(15,23,42,0.98)); }
+.unlock-choice:hover { border-color:rgba(250,204,21,0.5); }
 .skill-choice-head { display:grid; gap:6px; }
 .skill-choice-title { font-size:20px; font-weight:800; }
 .skill-choice-level { font-size:12px; color:#93a4bf; }
@@ -279,3 +309,4 @@ input { width: 100%; border: 1px solid var(--border); background: #0f172a; color
   50% { box-shadow: inset 0 0 0 1px rgba(253,224,71,0.85), 0 0 22px rgba(250,204,21,0.42); }
   100% { box-shadow: inset 0 0 0 1px rgba(250,204,21,0.45), 0 0 10px rgba(250,204,21,0.18); }
 }
+

@@ -1,4 +1,4 @@
-import { GOAL, GRID_SIZE, START, TILE, TOOL, getBuildingConfig, getTowerDisplayName } from './config.js';
+import { GOAL, GRID_SIZE, START, TILE, TOOL, LOCKED_TOWER_TILES, getBuildingConfig, getTowerDisplayName } from './config.js';
 
 const RENDER_ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
 const TOOL_PREVIEW_MAP = {
@@ -21,33 +21,33 @@ export function createRenderer(api) {
   function getHoveredCell() { return api.getHoveredCell(); }
   function getCurrentTool() { return api.getCurrentTool(); }
   function getSelectedTower() { return api.getSelectedTower(); }
-  function getUpgradeCost(tower) { return api.getUpgradeCost(tower); }
   function getUpgradeContext(tower) { return api.getUpgradeContext(tower); }
   function upgradeSelectedTower() { return api.upgradeSelectedTower(); }
-  function chooseSkill(skillKey) { return api.chooseSkill(skillKey); }
-  function activateSkill(skillKey) { return api.activateSkill(skillKey); }
   function getDom() { return api.dom; }
   function getSimulation() { return api.simulation; }
 
   function cellSizePx() { const rect = getDom().boardEl.getBoundingClientRect(); return rect.width / GRID_SIZE; }
   function cellCenterPx(x, y) { const cell = cellSizePx(); return { x: x * cell + cell / 2, y: y * cell + cell / 2 }; }
   function towerName(tile, tower = null) { return getTowerDisplayName(getConfig(), tile, tower); }
-  function setBuildButtonContent(button, label, cost, iconPath) {
-    button.innerHTML = `<span class="build-card-media"><img src="${iconPath}" alt="${label}" /></span><span class="build-card-meta"><span class="build-card-name">${label}</span><span class="build-card-cost">${cost}</span></span>`;
+  function isTowerLocked(tile) { return LOCKED_TOWER_TILES.includes(tile) && !getSimulation().isTowerUnlocked(tile); }
+  function setBuildButtonContent(button, label, cost, iconPath, tile = null) {
+    const locked = tile ? isTowerLocked(tile) : false;
+    button.classList.toggle('locked-build', locked);
+    button.innerHTML = `<span class="build-card-media">${locked ? '<span class="build-card-overlay-lock">🔒</span>' : ''}<img src="${iconPath}" alt="${label}" /></span><span class="build-card-meta"><span class="build-card-name">${label}${locked ? '<span class="build-card-lock">נעול</span>' : ''}</span><span class="build-card-cost">${locked ? '' : cost}</span></span>`;
   }
   function syncButtonLabels() {
     const config = getConfig(), dom = getDom();
-    setBuildButtonContent(dom.buildWallBtn, 'חומה', `${Math.round(config.buildings.wall.cost)}$`, 'assets/towers/wall.svg');
-    setBuildButtonContent(dom.buildTowerBtn, 'מגדל שמירה', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg');
-    setBuildButtonContent(dom.buildCannonBtn, 'תותח', `${Math.round(config.buildings.tower_cannon.cost)}$`, 'assets/towers/cannon.svg');
-    setBuildButtonContent(dom.buildSniperBtn, 'צלף', `${Math.round(config.buildings.tower_sniper.cost)}$`, 'assets/towers/sniper.svg');
-    setBuildButtonContent(dom.buildEmpBtn, 'EMP', `${Math.round(config.buildings.tower_emp.cost)}$`, 'assets/towers/emp.svg');
-    setBuildButtonContent(dom.buildRailgunBtn, 'Railgun', `${Math.round(config.buildings.tower_railgun.cost)}$`, 'assets/towers/railgun.svg');
-    setBuildButtonContent(dom.buildFreezeBtn, 'קירור', `${Math.round(config.buildings.tower_freeze.cost)}$`, 'assets/towers/freeze.svg');
-    setBuildButtonContent(dom.buildAABtn, 'נ"מ', `${Math.round(config.buildings.tower_aa.cost)}$`, 'assets/towers/aa.svg');
-    setBuildButtonContent(dom.buildMissileBtn, 'טילים', `${Math.round(config.buildings.tower_missile.cost)}$`, 'assets/towers/missile.svg');
-    setBuildButtonContent(dom.buildBufferBtn, 'באף', `${Math.round(config.buildings.tower_buffer.cost)}$`, 'assets/towers/buffer.svg');
-    setBuildButtonContent(dom.buildFlamerBtn, 'להביור', `${Math.round(config.buildings.tower_flamer.cost)}$`, 'assets/towers/flamer.svg');
+    setBuildButtonContent(dom.buildWallBtn, 'חומה', `${Math.round(config.buildings.wall.cost)}$`, 'assets/towers/wall.svg', TILE.WALL);
+    setBuildButtonContent(dom.buildTowerBtn, 'מגדל שמירה', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg', TILE.TOWER_BASIC);
+    setBuildButtonContent(dom.buildCannonBtn, 'תותח', `${Math.round(config.buildings.tower_cannon.cost)}$`, 'assets/towers/cannon.svg', TILE.TOWER_CANNON);
+    setBuildButtonContent(dom.buildSniperBtn, 'צלף', `${Math.round(config.buildings.tower_sniper.cost)}$`, 'assets/towers/sniper.svg', TILE.TOWER_SNIPER);
+    setBuildButtonContent(dom.buildEmpBtn, 'EMP', `${Math.round(config.buildings.tower_emp.cost)}$`, 'assets/towers/emp.svg', TILE.TOWER_EMP);
+    setBuildButtonContent(dom.buildRailgunBtn, 'Railgun', `${Math.round(config.buildings.tower_railgun.cost)}$`, 'assets/towers/railgun.svg', TILE.TOWER_RAILGUN);
+    setBuildButtonContent(dom.buildFreezeBtn, 'קרן מקפיאה', `${Math.round(config.buildings.tower_freeze.cost)}$`, 'assets/towers/freeze.svg', TILE.TOWER_FREEZE);
+    setBuildButtonContent(dom.buildAABtn, 'נ"מ', `${Math.round(config.buildings.tower_aa.cost)}$`, 'assets/towers/aa.svg', TILE.TOWER_AA);
+    setBuildButtonContent(dom.buildMissileBtn, 'טילים', `${Math.round(config.buildings.tower_missile.cost)}$`, 'assets/towers/missile.svg', TILE.TOWER_MISSILE);
+    setBuildButtonContent(dom.buildBufferBtn, 'באף', `${Math.round(config.buildings.tower_buffer.cost)}$`, 'assets/towers/buffer.svg', TILE.TOWER_BUFFER);
+    setBuildButtonContent(dom.buildFlamerBtn, 'להביור', `${Math.round(config.buildings.tower_flamer.cost)}$`, 'assets/towers/flamer.svg', TILE.TOWER_FLAMER);
   }
   function skillLabel(skillKey) { return getConfig().skills?.[skillKey]?.label || skillKey; }
   function skillLevel(skillKey) { return getSimulation().getSkillLevel(skillKey); }
@@ -90,7 +90,7 @@ export function createRenderer(api) {
   }
   function renderSelectedInfo() {
     const dom = getDom(), selected = getSelected(), state = getState();
-    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן קירור', [TOOL.AA]: 'נ"מ', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
+    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.AA]: 'נ"מ', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן מקפיאה', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
     if (state.skills.pendingTargetSkill) { dom.selectedInfoEl.textContent = `בחר משבצת עבור ${skillLabel(state.skills.pendingTargetSkill)}`; return; }
     if (state.pendingSkillChoice) { dom.selectedInfoEl.textContent = 'המשחק ממתין לבחירת סקיל'; return; }
     if (!selected) { dom.selectedInfoEl.textContent = `מצב: ${labels[getCurrentTool()]}`; return; }
@@ -111,12 +111,12 @@ export function createRenderer(api) {
         else if (tile === TILE.WALL) button.classList.add('wall');
         else if (tile === TILE.TOWER_BASIC) { button.classList.add('tower_basic'); button.textContent = tower?.premiumKey === 'gatling_gun' ? 'GG' : 'GS'; }
         else if (tile === TILE.TOWER_CANNON) { button.classList.add('tower_cannon'); button.textContent = 'C'; }
+        else if (tile === TILE.TOWER_AA) { button.classList.add('tower_aa'); button.textContent = tower?.premiumKey === 'sky_guardian' ? 'SAM' : 'AA'; }
         else if (tile === TILE.TOWER_SNIPER) { button.classList.add('tower_sniper'); button.textContent = 'S'; }
         else if (tile === TILE.TOWER_EMP) { button.classList.add('tower_emp'); button.textContent = 'E'; }
         else if (tile === TILE.TOWER_RAILGUN) { button.classList.add('tower_railgun'); button.textContent = 'R'; }
         else if (tile === TILE.TOWER_FREEZE) { button.classList.add('tower_freeze'); button.textContent = 'F'; }
-        else if (tile === TILE.TOWER_AA) { button.classList.add('tower_aa'); button.textContent = 'AA'; }
-        else if (tile === TILE.TOWER_MISSILE) { button.classList.add('tower_missile'); button.textContent = 'M'; }
+        else if (tile === TILE.TOWER_MISSILE) { button.classList.add('tower_missile'); button.textContent = tower?.premiumKey === 'mini_nuke' ? 'NUKE' : 'M'; }
         else if (tile === TILE.TOWER_BUFFER) { button.classList.add('tower_buffer'); button.textContent = 'B'; }
         else if (tile === TILE.TOWER_FLAMER) { button.classList.add('tower_flamer'); button.textContent = 'FL'; }
         if (tower) {
@@ -125,7 +125,7 @@ export function createRenderer(api) {
             const base = button.textContent;
             button.innerHTML = `<div class="cell-stack"><div>${base}</div><div class="cell-level">L${level}</div></div>`;
           } else {
-            button.innerHTML = `<div class="cell-stack${tower.premiumKey ? ' preview-stack' : ''}"><div>${button.textContent}</div>${tower.premiumKey ? '<div class="cell-level premium-badge">PREM</div>' : ''}</div>`;
+            button.innerHTML = `<div class="cell-stack${tower.premiumKey ? ' preview-stack' : ''}"><div>${button.textContent}</div>${tower.premiumKey ? `<div class="cell-level premium-badge">${tower.premiumKey === 'mini_nuke' ? 'NUKE' : (tower.premiumKey === 'sky_guardian' ? 'SAM' : 'PREM')}</div>` : ''}</div>`;
           }
           if (tower.premiumKey) button.classList.add('premium');
           if (tower.recoil > 0) button.classList.add('recoil');
@@ -178,7 +178,8 @@ export function createRenderer(api) {
     for (const projectile of state.projectiles) {
       if (projectile.missileTracking) {
         const center = cellCenterPx(projectile.x, projectile.y);
-        html += `<div class="projectile" style="left:${center.x}px;top:${center.y}px;width:12px;height:5px;transform:translate(-50%,-50%);border-radius:999px;background:rgba(245,158,11,0.95);box-shadow:0 0 12px rgba(245,158,11,0.95)"></div>`;
+        const tint = projectile.antiAirMissile ? 'rgba(125,211,252,0.98)' : 'rgba(245,158,11,0.95)';
+        html += `<div class="projectile" style="left:${center.x}px;top:${center.y}px;width:${projectile.antiAirMissile ? 13 : 12}px;height:${projectile.antiAirMissile ? 4 : 5}px;transform:translate(-50%,-50%);border-radius:999px;background:${tint};box-shadow:0 0 12px ${tint}"></div>`;
         continue;
       }
       const from = cellCenterPx(projectile.fromX, projectile.fromY), to = cellCenterPx(projectile.toX, projectile.toY), dx = to.x - from.x, dy = to.y - from.y, length = Math.hypot(dx, dy), angle = Math.atan2(dy, dx) * 180 / Math.PI;
@@ -191,8 +192,15 @@ export function createRenderer(api) {
       else html += `<div class="beam" style="left:${from.x}px;top:${from.y}px;width:${length}px;height:${beam.width}px;background:${beam.color};box-shadow:0 0 10px ${beam.color};transform:rotate(${angle}deg)"></div>`;
     }
     for (const explosion of state.explosions) {
-      const center = cellCenterPx(explosion.x, explosion.y), progress = 1 - (explosion.ttl / 0.22), size = explosion.radius * 2 * cell * (0.7 + progress * 0.7), alpha = Math.max(0, explosion.ttl / 0.22);
-      html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha}"></div>`;
+      const baseTtl = explosion.kind === 'mini_nuke' ? 0.48 : (explosion.kind === 'anti_air_hit' ? 0.18 : 0.22);
+      const center = cellCenterPx(explosion.x, explosion.y), progress = 1 - (explosion.ttl / baseTtl), size = explosion.radius * 2 * cell * (0.7 + progress * (explosion.kind === 'mini_nuke' ? 1.1 : 0.7)), alpha = Math.max(0, explosion.ttl / baseTtl);
+      if (explosion.kind === 'mini_nuke') {
+        html += `<div class="explosion explosion-nuke" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha}"></div>`;
+        html += `<div class="explosion-shockwave" style="left:${center.x}px;top:${center.y}px;width:${size * 1.32}px;height:${size * 1.32}px;opacity:${alpha * 0.88}"></div>`;
+        html += `<div class="explosion-flash" style="left:${center.x}px;top:${center.y}px;width:${size * 0.72}px;height:${size * 0.72}px;opacity:${Math.min(1, alpha * 1.2)}"></div>`;
+      } else if (explosion.kind === 'anti_air_hit') {
+        html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha};border-color:rgba(125,211,252,0.85);background:rgba(125,211,252,0.24);box-shadow:0 0 20px rgba(125,211,252,0.34)"></div>`;
+      } else html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha}"></div>`;
     }
     for (const pulse of state.pulses) {
       const center = cellCenterPx(pulse.x, pulse.y), progress = 1 - (pulse.ttl / 0.22), size = pulse.radius * 2 * cell * (0.5 + progress * 1.0), alpha = Math.max(0, pulse.ttl / 0.22);
@@ -258,10 +266,11 @@ export function createRenderer(api) {
     const dom = getDom(), state = getState();
     dom.skillOverlayEl.classList.toggle('open', Boolean(state.pendingSkillChoice));
     if (!state.pendingSkillChoice) return;
-    dom.skillPromptEl.textContent = `הגעת לגל ${state.skills.selectionWave}. בחר סקיל אחד לשדרוג או לפתיחה.`;
-    dom.skillChoicesEl.innerHTML = state.skills.choices.map((skillKey) => {
-      const level = skillLevel(skillKey);
-      return `<button class="skill-choice" type="button" data-skill-choice="${skillKey}"><span class="skill-choice-head"><span class="skill-choice-title">${skillLabel(skillKey)}</span><span class="skill-choice-level">${level > 0 ? `רמה נוכחית ${level}` : 'חדש'}</span></span><span class="skill-choice-body">${describeNextSkillLevel(skillKey)}</span><span class="skill-choice-body skill-choice-subtle">${level > 0 ? `עכשיו: ${describeSkill(skillKey)}` : 'הסקיל יתווסף למאגר שלך מיד אחרי הבחירה.'}</span></button>`;
+    dom.skillPromptEl.textContent = `הגעת לגל ${state.skills.selectionWave}. בחר שדרוג אחד.`;
+    dom.skillChoicesEl.innerHTML = state.skills.choices.map((choice, index) => {
+      if (choice.type === 'unlock_tower') return `<button class="skill-choice unlock-choice" type="button" data-skill-choice-index="${index}"><span class="skill-choice-head"><span class="skill-choice-title">שחרור מגדל</span><span class="skill-choice-level">חדש</span></span><span class="skill-choice-body">פתח את ${choice.label} לבנייה מיידית.</span><span class="skill-choice-body skill-choice-subtle">אחרי הבחירה, המגדל יופיע בסרגל התחתון ויהיה זמין מעכשיו.</span></button>`;
+      const level = skillLevel(choice.key);
+      return `<button class="skill-choice" type="button" data-skill-choice-index="${index}"><span class="skill-choice-head"><span class="skill-choice-title">${skillLabel(choice.key)}</span><span class="skill-choice-level">${level > 0 ? `רמה נוכחית ${level}` : 'חדש'}</span></span><span class="skill-choice-body">${describeNextSkillLevel(choice.key)}</span><span class="skill-choice-body skill-choice-subtle">${level > 0 ? `עכשיו: ${describeSkill(choice.key)}` : 'הסקיל יתווסף למאגר שלך מיד אחרי הבחירה.'}</span></button>`;
     }).join('');
   }
   function renderCountdownOverlay() {

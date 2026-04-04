@@ -4,9 +4,11 @@ import {
   START,
   TILE,
   TOOL,
+  TOOL_TO_TILE,
   deepClone,
   getBuildingConfig,
   getPremiumUpgradeConfig,
+  getTowerDisplayName,
   getTowerRuntimeConfig,
   loadConfigFromDatabase,
   loadConfigFromStorage,
@@ -68,6 +70,7 @@ const spawnAirBtn = document.getElementById('spawnAirBtn');
 const freeBuildBtn = document.getElementById('freeBuildBtn');
 const maxSelectedBtn = document.getElementById('maxSelectedBtn');
 const togglePauseCheatBtn = document.getElementById('togglePauseCheatBtn');
+const unlockAllTowersBtn = document.getElementById('unlockAllTowersBtn');
 const skillOverlayEl = document.getElementById('skillOverlay');
 const skillPromptEl = document.getElementById('skillPrompt');
 const skillChoicesEl = document.getElementById('skillChoices');
@@ -120,7 +123,7 @@ const renderer = createRenderer({
   getUpgradeCost: (tower) => getUpgradeCost(tower),
   getUpgradeContext: (tower) => getUpgradeContext(tower),
   upgradeSelectedTower: () => upgradeSelectedTower(),
-  chooseSkill: (skillKey) => chooseSkill(skillKey),
+  chooseSkill: (choiceIndex) => chooseSkill(choiceIndex),
   activateSkill: (skillKey) => activateSkill(skillKey),
 });
 const ui = createUiManager({
@@ -158,6 +161,17 @@ function getCellFromPointerEvent(event) {
 function supportsPlacementRangePreview(tool) {
   return [TOOL.TOWER, TOOL.CANNON, TOOL.SNIPER, TOOL.EMP, TOOL.RAILGUN, TOOL.FREEZE, TOOL.AA, TOOL.MISSILE, TOOL.BUFFER, TOOL.FLAMER].includes(tool);
 }
+function isTileUnlocked(tile) {
+  return tile == null ? true : simulation.isTowerUnlocked(tile);
+}
+function isToolLocked(tool) {
+  const tile = TOOL_TO_TILE[tool];
+  return tile ? !isTileUnlocked(tile) : false;
+}
+function getToolLabel(tool) {
+  const tile = TOOL_TO_TILE[tool];
+  return tile ? getTowerDisplayName(CONFIG, tile) : 'מגדל';
+}
 function setHoveredCell(x, y) {
   const next = x == null || y == null ? null : { x, y };
   if ((hoveredCell?.x ?? null) === (next?.x ?? null) && (hoveredCell?.y ?? null) === (next?.y ?? null)) return;
@@ -170,6 +184,10 @@ function clearHoveredCell() {
   renderStatic();
 }
 function setCurrentTool(tool) {
+  if (isToolLocked(tool)) {
+    setMessage(`${getToolLabel(tool)} עדיין נעול. אפשר לשחרר אותו במסך הבחירה בין גלים.`);
+    return;
+  }
   currentTool = tool;
   if (supportsPlacementRangePreview(tool)) selected = null;
   if (!supportsPlacementRangePreview(tool)) hoveredCell = null;
@@ -195,6 +213,7 @@ function buildAt(x, y, type) {
   if (state.grid[y][x] !== TILE.EMPTY) { setMessage('המשבצת תפוסה'); return; }
   const config = getTileBuildConfig(type);
   if (!config) return;
+  if (!isTileUnlocked(type)) { setMessage(`${getTowerDisplayName(CONFIG, type)} עדיין נעול`); return; }
   if (performance.now() / 1000 > freeBuildUntil && state.money < Number(config.cost)) { setMessage('אין מספיק כסף'); return; }
   if (state.enemies.some((enemy) => Math.round(enemy.x) === x && Math.round(enemy.y) === y)) { setMessage('יש אויב במשבצת'); return; }
   const nextGrid = simulation.cloneGrid(state.grid); nextGrid[y][x] = type;
@@ -221,8 +240,11 @@ function destroyAt(x, y) {
 }
 function getSelectedTower() { if (!selected) return null; return state.towers[keyOf(selected.x, selected.y)] || null; }
 function getPremiumUpgradeKey(tower) {
-  if (!tower || tower.type !== TILE.TOWER_BASIC) return null;
-  return 'gatling_gun';
+  if (!tower) return null;
+  if (tower.type === TILE.TOWER_BASIC) return 'gatling_gun';
+  if (tower.type === TILE.TOWER_AA) return 'sky_guardian';
+  if (tower.type === TILE.TOWER_MISSILE) return 'mini_nuke';
+  return null;
 }
 function getPremiumUpgradeData(tower) {
   const premiumKey = getPremiumUpgradeKey(tower);
@@ -299,10 +321,14 @@ function upgradeAt(x, y) {
   selected = { x, y };
   return upgradeTower(tower);
 }
-function chooseSkill(skillKey) {
-  if (!simulation.chooseSkill(skillKey)) return;
-  const level = simulation.getSkillLevel(skillKey);
-  setMessage(level > 1 ? `${CONFIG.skills[skillKey].label} עלה לרמה ${level}` : `נבחר סקיל חדש: ${CONFIG.skills[skillKey].label}`);
+function chooseSkill(choiceIndex) {
+  const choice = simulation.chooseSkill(Number(choiceIndex));
+  if (!choice) return;
+  if (choice.type === 'unlock_tower') setMessage(`שוחרר מגדל חדש: ${getTowerDisplayName(CONFIG, choice.key)}`);
+  else {
+    const level = simulation.getSkillLevel(choice.key);
+    setMessage(level > 1 ? `${CONFIG.skills[choice.key].label} עלה לרמה ${level}` : `נבחר סקיל חדש: ${CONFIG.skills[choice.key].label}`);
+  }
   renderStatic();
 }
 function activateSkill(skillKey) {
@@ -436,10 +462,10 @@ resetConfigBtn.addEventListener('click', resetConfig);
 exportConfigBtn.addEventListener('click', exportConfig);
 closeCheatsBtn.addEventListener('click', closeCheats);
 skillChoicesEl.addEventListener('pointerdown', (event) => {
-  const button = getClosestFromEventTarget(event.target, '[data-skill-choice]');
+  const button = getClosestFromEventTarget(event.target, '[data-skill-choice-index]');
   if (!button) return;
   event.stopPropagation();
-  chooseSkill(button.dataset.skillChoice);
+  chooseSkill(button.dataset.skillChoiceIndex);
 });
 skillBarEl.addEventListener('pointerdown', (event) => {
   const button = getClosestFromEventTarget(event.target, '[data-skill-key]');
@@ -468,6 +494,11 @@ togglePauseCheatBtn.addEventListener('click', () => {
   if (!state.hasStarted) state.hasStarted = true;
   state.running = !state.running;
   renderHud();
+});
+unlockAllTowersBtn?.addEventListener('click', () => {
+  for (const tile of Object.keys(state.skills?.unlockedTowers || {})) state.skills.unlockedTowers[tile] = true;
+  renderStatic();
+  setMessage('כל המגדלים נפתחו');
 });
 
 buildWallBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.WALL ? TOOL.SELECT : TOOL.WALL));

@@ -1,7 +1,9 @@
-import { GOAL, GRID_SIZE, START, TILE, getBuildingConfig, getTowerRuntimeConfig } from './config.js';
+import { GOAL, GRID_SIZE, START, TILE, LOCKED_TOWER_TILES, STARTING_UNLOCKED_TOWER_TILES, getBuildingConfig, getTowerDisplayName, getTowerRuntimeConfig } from './config.js';
 
 const PASSIVE_SKILL_KEYS = ['tower_damage', 'tower_fire_rate', 'tower_range', 'tower_money'];
 const ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
+const CHOICE_TYPE_SKILL = 'skill';
+const CHOICE_TYPE_UNLOCK_TOWER = 'unlock_tower';
 
 export function createSimulation(api) {
   function getConfig() { return api.getConfig(); }
@@ -52,10 +54,23 @@ export function createSimulation(api) {
     for (const item of options) { roll -= item.weight; if (roll <= 0) return item.type; }
     return options[options.length - 1].type;
   }
+  function createUnlockedTowerState() {
+    const unlockedTowers = Object.fromEntries(LOCKED_TOWER_TILES.map((tile) => [tile, false]));
+    for (const tile of STARTING_UNLOCKED_TOWER_TILES) unlockedTowers[tile] = true;
+    return unlockedTowers;
+  }
   function createSkillState() {
     const levels = Object.fromEntries([...PASSIVE_SKILL_KEYS, ...ACTIVE_SKILL_KEYS].map((key) => [key, 0]));
     const cooldowns = Object.fromEntries(ACTIVE_SKILL_KEYS.map((key) => [key, 0]));
-    return { levels, cooldowns, choices: [], activeEffects: [], pendingTargetSkill: null, selectionWave: null, totalSelections: 0 };
+    return { levels, cooldowns, choices: [], activeEffects: [], pendingTargetSkill: null, selectionWave: null, totalSelections: 0, unlockedTowers: createUnlockedTowerState() };
+  }
+  function isTowerUnlocked(tile) { return Boolean(getState().skills?.unlockedTowers?.[tile]); }
+  function listLockedTowerChoices() {
+    return LOCKED_TOWER_TILES.filter((tile) => !isTowerUnlocked(tile)).map((tile) => ({
+      type: CHOICE_TYPE_UNLOCK_TOWER,
+      key: tile,
+      label: getTowerDisplayName(getConfig(), tile),
+    }));
   }
   function getSkillLevel(skillKey) { return Number(getState().skills?.levels?.[skillKey] || 0); }
   function getPassiveBonusPct(skillKey) {
@@ -79,14 +94,22 @@ export function createSimulation(api) {
     return null;
   }
   function listAvailableSkills() { return [...PASSIVE_SKILL_KEYS, ...ACTIVE_SKILL_KEYS]; }
-  function buildSkillChoices() {
-    const count = Math.max(1, Math.min(listAvailableSkills().length, Math.round(Number(getConfig().skills?.progression?.choicesPerOffer) || 3)));
-    const pool = listAvailableSkills().slice();
+  function shuffle(array) {
+    const pool = array.slice();
     for (let i = pool.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    return pool.slice(0, count);
+    return pool;
+  }
+  function buildSkillChoices() {
+    const totalChoices = Math.max(1, Math.round(Number(getConfig().skills?.progression?.choicesPerOffer) || 3));
+    const lockedTowerChoices = listLockedTowerChoices();
+    const choices = [];
+    if (lockedTowerChoices.length > 0) choices.push(shuffle(lockedTowerChoices)[0]);
+    const regularChoiceCount = Math.max(0, Math.min(listAvailableSkills().length, totalChoices - choices.length));
+    const regularChoices = shuffle(listAvailableSkills()).slice(0, regularChoiceCount).map((skillKey) => ({ type: CHOICE_TYPE_SKILL, key: skillKey }));
+    return shuffle([...choices, ...regularChoices]);
   }
   function queueSkillChoiceForWave(wave) {
     const state = getState();
@@ -94,16 +117,19 @@ export function createSimulation(api) {
     state.skills.selectionWave = wave;
     state.pendingSkillChoice = true;
   }
-  function chooseSkill(skillKey) {
+  function chooseSkill(choiceIndex) {
     const state = getState();
-    if (!listAvailableSkills().includes(skillKey)) return false;
-    state.skills.levels[skillKey] = Number(state.skills.levels[skillKey] || 0) + 1;
+    const choice = state.skills.choices?.[choiceIndex];
+    if (!choice) return false;
+    if (choice.type === CHOICE_TYPE_UNLOCK_TOWER) state.skills.unlockedTowers[choice.key] = true;
+    else if (choice.type === CHOICE_TYPE_SKILL && listAvailableSkills().includes(choice.key)) state.skills.levels[choice.key] = Number(state.skills.levels[choice.key] || 0) + 1;
+    else return false;
     state.skills.choices = [];
     state.skills.selectionWave = null;
     state.skills.totalSelections = Number(state.skills.totalSelections || 0) + 1;
     state.pendingSkillChoice = false;
     state.preWaveCountdown = getWaveCountdownDuration();
-    return true;
+    return choice;
   }
   function setPendingTargetSkill(skillKey) {
     const state = getState();
@@ -334,10 +360,13 @@ export function createSimulation(api) {
         applySlow(target, getTowerSlowPct(tower, tower.type), Number(config.slowDuration), nowSec);
         state.beams.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.12, width: 3, color: 'rgba(96,165,250,0.85)' });
       } else if (tower.type === TILE.TOWER_AA) {
-        target.hp -= damage;
-        state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.06, aa: true });
+        if (Number(config.homingMissile || 0)) state.projectiles.push({ missileTracking: true, x, y, targetId: target.id, lastKnownX: target.x, lastKnownY: target.y, speed: 8.8, damage, ttl: 5, antiAirMissile: true, missileTowerType: TILE.TOWER_AA, missilePremiumKey: tower.premiumKey || null });
+        else {
+          target.hp -= damage;
+          state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.06, aa: true });
+        }
       } else if (tower.type === TILE.TOWER_MISSILE) {
-        state.projectiles.push({ missileTracking: true, x, y, targetId: target.id, lastKnownX: target.x, lastKnownY: target.y, speed: 6.5, damage, ttl: 6 });
+        state.projectiles.push({ missileTracking: true, x, y, targetId: target.id, lastKnownX: target.x, lastKnownY: target.y, speed: tower.premiumKey === 'mini_nuke' ? 5.2 : 6.5, damage, ttl: 6, miniNuke: tower.premiumKey === 'mini_nuke' });
       } else if (tower.type === TILE.TOWER_FLAMER) {
         const flameLength = range, coneWidth = Number(config.coneWidth || 0.85), dx = target.x - x, dy = target.y - y, baseAngle = Math.atan2(dy, dx), endX = x + Math.cos(baseAngle) * flameLength, endY = y + Math.sin(baseAngle) * flameLength;
         let hitAny = false;
@@ -372,9 +401,16 @@ export function createSimulation(api) {
       const dx = tx - missile.x, dy = ty - missile.y, dist = Math.hypot(dx, dy) || 0.0001, step = Math.min(missile.speed * dt, dist), nx = missile.x + (dx / dist) * step, ny = missile.y + (dy / dist) * step;
       const hit = dist <= 0.18 || (target && Math.hypot(target.x - nx, target.y - ny) <= 0.22);
       if (hit) {
-        const cfg = getConfig().buildings.tower_missile;
-        for (const enemy of state.enemies) if (Math.hypot(enemy.x - tx, enemy.y - ty) <= Number(cfg.splashRadius)) enemy.hp -= missile.damage;
-        state.explosions.push({ x: tx, y: ty, radius: Number(cfg.splashRadius), ttl: 0.22 });
+        const missileTowerType = missile.missileTowerType || TILE.TOWER_MISSILE;
+        const cfg = getTowerRuntimeConfig(getConfig(), { type: missileTowerType, premiumKey: missile.missilePremiumKey || (missile.miniNuke ? 'mini_nuke' : null) }, missileTowerType);
+        const splashRadius = Number(cfg.splashRadius || 0);
+        if (splashRadius > 0) {
+          for (const enemy of state.enemies) if (Math.hypot(enemy.x - tx, enemy.y - ty) <= splashRadius) enemy.hp -= missile.damage;
+          state.explosions.push({ x: tx, y: ty, radius: splashRadius, ttl: missile.miniNuke ? 0.48 : 0.22, kind: missile.miniNuke ? 'mini_nuke' : 'standard' });
+        } else if (target) {
+          target.hp -= missile.damage;
+          state.explosions.push({ x: tx, y: ty, radius: missile.antiAirMissile ? 0.65 : 0.5, ttl: 0.18, kind: missile.antiAirMissile ? 'anti_air_hit' : 'standard' });
+        }
       } else nextMissiles.push({ ...missile, x: nx, y: ny, lastKnownX: tx, lastKnownY: ty, ttl: missile.ttl - dt });
     }
     state.projectiles = state.projectiles.filter((p) => !p.missileTracking && (p.ttl - dt) > 0).map((p) => ({ ...p, ttl: p.ttl - dt })).concat(nextMissiles.filter((p) => p.ttl > 0));
@@ -424,5 +460,6 @@ export function createSimulation(api) {
     } else state.intermission = 0;
   }
 
-  return { ACTIVE_SKILL_KEYS, PASSIVE_SKILL_KEYS, castPendingSkillAt, chooseSkill, clearPendingTargetSkill, cloneGrid, createInitialState, findPath, getActiveSkillDamageMultiplier, getActiveSkillStats, getAdjacentBuffs, getEnemyLevelForWave, getPassiveBonusPct, getSkillDefinition, getSkillLevel, getTowerDamage, getTowerFireInterval, getTowerFireRate, getTowerRange, getTowerSlowPct, getWaveEnemyCount, keyOf, rebuildAllEnemyPaths, setPendingTargetSkill, spawnEnemy, update };
+  return { ACTIVE_SKILL_KEYS, PASSIVE_SKILL_KEYS, castPendingSkillAt, chooseSkill, clearPendingTargetSkill, cloneGrid, createInitialState, findPath, getActiveSkillDamageMultiplier, getActiveSkillStats, getAdjacentBuffs, getEnemyLevelForWave, getPassiveBonusPct, getSkillDefinition, getSkillLevel, getTowerDamage, getTowerFireInterval, getTowerFireRate, getTowerRange, getTowerSlowPct, getWaveEnemyCount, isTowerUnlocked, keyOf, rebuildAllEnemyPaths, setPendingTargetSkill, spawnEnemy, update };
 }
+

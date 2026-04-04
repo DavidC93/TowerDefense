@@ -36,6 +36,37 @@ export const TOOL = {
   DESTROY: 'destroy',
 };
 
+export const TOOL_TO_TILE = {
+  [TOOL.WALL]: TILE.WALL,
+  [TOOL.TOWER]: TILE.TOWER_BASIC,
+  [TOOL.CANNON]: TILE.TOWER_CANNON,
+  [TOOL.AA]: TILE.TOWER_AA,
+  [TOOL.SNIPER]: TILE.TOWER_SNIPER,
+  [TOOL.EMP]: TILE.TOWER_EMP,
+  [TOOL.RAILGUN]: TILE.TOWER_RAILGUN,
+  [TOOL.FREEZE]: TILE.TOWER_FREEZE,
+  [TOOL.MISSILE]: TILE.TOWER_MISSILE,
+  [TOOL.BUFFER]: TILE.TOWER_BUFFER,
+  [TOOL.FLAMER]: TILE.TOWER_FLAMER,
+};
+
+export const LOCKED_TOWER_TILES = [
+  TILE.TOWER_SNIPER,
+  TILE.TOWER_EMP,
+  TILE.TOWER_RAILGUN,
+  TILE.TOWER_FREEZE,
+  TILE.TOWER_MISSILE,
+  TILE.TOWER_BUFFER,
+  TILE.TOWER_FLAMER,
+];
+
+export const STARTING_UNLOCKED_TOWER_TILES = [
+  TILE.WALL,
+  TILE.TOWER_BASIC,
+  TILE.TOWER_CANNON,
+  TILE.TOWER_AA,
+];
+
 export const DEFAULT_CONFIG = {
   enemies: {
     grunt: {
@@ -226,7 +257,22 @@ export const DEFAULT_CONFIG = {
       upgradeBaseCostPct: 40,
       upgradeStepCostPct: 40,
       upgradeDamagePct: 20,
-      maxUpgradeLevel: 10
+      maxUpgradeLevel: 10,
+      premium: {
+        sky_guardian: {
+          enabled: 1,
+          label: 'Sky Guardian',
+          costMultiplier: 10,
+          range: 7,
+          damage: 500,
+          fireRate: 50,
+          canHitAir: 1,
+          airOnly: 1,
+          homingMissile: 1,
+          splashRadius: 0,
+          maxCount: 1
+        }
+      }
     },
     tower_missile: {
       cost: 120,
@@ -239,7 +285,21 @@ export const DEFAULT_CONFIG = {
       upgradeBaseCostPct: 40,
       upgradeStepCostPct: 40,
       upgradeDamagePct: 20,
-      maxUpgradeLevel: 10
+      maxUpgradeLevel: 10,
+      premium: {
+        mini_nuke: {
+          enabled: 1,
+          label: 'מיני-ניוק',
+          costMultiplier: 10,
+          range: 9,
+          damage: 1000,
+          fireRate: 10,
+          splashRadius: 4,
+          canHitAir: 1,
+          airOnly: 0,
+          maxCount: 1
+        }
+      }
     },
     tower_buffer: {
       cost: 60,
@@ -353,9 +413,11 @@ export const CONFIG_SCHEMA = {
     tower_sniper: { title: 'צלף', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_emp: { title: 'EMP', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, slowPct: { label: 'האטה %', step: 1 }, slowDuration: { label: 'משך האטה', step: 0.1 }, slowUpgradePct: { label: 'תוספת האטה לשדרוג %', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_railgun: { title: 'Railgun', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, pierceCount: { label: 'כמות חדירה', step: 1 }, lineWidth: { label: 'רוחב קו', step: 0.05 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
-    tower_freeze: { title: 'קרן קירור', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, slowPct: { label: 'האטה %', step: 1 }, slowDuration: { label: 'משך האטה', step: 0.1 }, slowUpgradePct: { label: 'תוספת האטה לשדרוג %', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_freeze: { title: 'קרן מקפיאה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, slowPct: { label: 'האטה %', step: 1 }, slowDuration: { label: 'משך האטה', step: 0.1 }, slowUpgradePct: { label: 'תוספת האטה לשדרוג %', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_aa: { title: 'הגנה אווירית', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, airOnly: { label: 'רק אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_aa_premium: { title: 'הגנה אווירית - פרימיום', fields: { premiumCostMultiplier: { label: 'מכפיל עלות פרימיום', step: 0.1, path: 'buildings.tower_aa.premium.sky_guardian.costMultiplier' }, premiumRange: { label: 'טווח פרימיום', step: 0.1, path: 'buildings.tower_aa.premium.sky_guardian.range' }, premiumDamage: { label: 'נזק פרימיום', step: 1, path: 'buildings.tower_aa.premium.sky_guardian.damage' }, premiumFireRate: { label: 'קצב אש פרימיום (RPM)', step: 1, path: 'buildings.tower_aa.premium.sky_guardian.fireRate' }, premiumCanHitAir: { label: 'פרימיום תוקף אוויר 1/0', step: 1, path: 'buildings.tower_aa.premium.sky_guardian.canHitAir' }, premiumAirOnly: { label: 'פרימיום רק אוויר 1/0', step: 1, path: 'buildings.tower_aa.premium.sky_guardian.airOnly' }, premiumHomingMissile: { label: 'טיל מתביית 1/0', step: 1, path: 'buildings.tower_aa.premium.sky_guardian.homingMissile' }, premiumSplashRadius: { label: 'רדיוס פיצוץ', step: 0.1, path: 'buildings.tower_aa.premium.sky_guardian.splashRadius' }, premiumMaxCount: { label: 'מקסימום עותקים פרימיום', step: 1, path: 'buildings.tower_aa.premium.sky_guardian.maxCount' } } },
     tower_missile: { title: 'משגר טילים', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, splashRadius: { label: 'רדיוס פיצוץ', step: 0.05 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_missile_premium: { title: 'משגר טילים - פרימיום', fields: { premiumCostMultiplier: { label: 'מכפיל עלות פרימיום', step: 0.1, path: 'buildings.tower_missile.premium.mini_nuke.costMultiplier' }, premiumRange: { label: 'טווח פרימיום', step: 0.1, path: 'buildings.tower_missile.premium.mini_nuke.range' }, premiumDamage: { label: 'נזק פרימיום', step: 1, path: 'buildings.tower_missile.premium.mini_nuke.damage' }, premiumFireRate: { label: 'קצב אש פרימיום (RPM)', step: 1, path: 'buildings.tower_missile.premium.mini_nuke.fireRate' }, premiumSplashRadius: { label: 'רדיוס פיצוץ פרימיום', step: 0.1, path: 'buildings.tower_missile.premium.mini_nuke.splashRadius' }, premiumCanHitAir: { label: 'פרימיום תוקף אוויר 1/0', step: 1, path: 'buildings.tower_missile.premium.mini_nuke.canHitAir' }, premiumAirOnly: { label: 'פרימיום רק אוויר 1/0', step: 1, path: 'buildings.tower_missile.premium.mini_nuke.airOnly' }, premiumMaxCount: { label: 'מקסימום עותקים פרימיום', step: 1, path: 'buildings.tower_missile.premium.mini_nuke.maxCount' } } },
     tower_buffer: { title: 'מגדל באף', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, damageBuffPct: { label: 'בונוס נזק %', step: 1 }, fireRateBuffPct: { label: 'בונוס קצב אש %', step: 1 }, auraRange: { label: 'טווח הילה', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת לבונוס %', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_flamer: { title: 'להביור', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח זיהוי', step: 0.1 }, flameLength: { label: 'אורך להבה', step: 0.1 }, damage: { label: 'נזק מיידי', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, coneWidth: { label: 'רוחב חרוט', step: 0.05 }, burnDps: { label: 'נזק שריפה לשנייה', step: 1 }, burnDuration: { label: 'משך שריפה', step: 0.1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
   }},
@@ -442,7 +504,9 @@ export function getTowerRuntimeConfig(config, tower, tile) {
 }
 export function getTowerDisplayName(config, tile, tower = null) {
   if (tile === TILE.TOWER_BASIC && tower?.premiumKey === 'gatling_gun') return config?.buildings?.tower_basic?.premium?.gatling_gun?.label || 'Gatling Gun';
-  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל שמירה', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן קירור', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
+  if (tile === TILE.TOWER_AA && tower?.premiumKey === 'sky_guardian') return config?.buildings?.tower_aa?.premium?.sky_guardian?.label || 'Sky Guardian';
+  if (tile === TILE.TOWER_MISSILE && tower?.premiumKey === 'mini_nuke') return config?.buildings?.tower_missile?.premium?.mini_nuke?.label || 'מיני-ניוק';
+  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל שמירה', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן מקפיאה', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
   return labels[tile] || tile;
 }
 export function getBuildingConfig(config, tile) {
@@ -464,4 +528,5 @@ export function getBuildingConfig(config, tile) {
 export function tileLabel(tile) {
   return getTowerDisplayName(DEFAULT_CONFIG, tile, null);
 }
+
 
