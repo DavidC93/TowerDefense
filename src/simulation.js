@@ -262,6 +262,43 @@ export function createSimulation(api) {
     }
     return remaining;
   }
+  function getEnemyVelocity(enemy) {
+    if (!enemy.path || enemy.pathIndex >= enemy.path.length) return { x: 0, y: 0 };
+    const nextWaypoint = enemy.path[enemy.pathIndex];
+    const dx = nextWaypoint.x - enemy.x, dy = nextWaypoint.y - enemy.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    return { x: (dx / distance) * Number(enemy.speed || 0), y: (dy / distance) * Number(enemy.speed || 0) };
+  }
+  function getArtilleryImpactPoint(towerX, towerY, target, config) {
+    const projectileSpeed = Math.max(1, Number(config.projectileSpeed || 5));
+    const initialDistance = Math.hypot(target.x - towerX, target.y - towerY);
+    const travelTime = Math.max(0.22, initialDistance / projectileSpeed);
+    const velocity = getEnemyVelocity(target);
+    const predictedX = clamp(target.x + velocity.x * travelTime, 0, GRID_SIZE - 1);
+    const predictedY = clamp(target.y + velocity.y * travelTime, 0, GRID_SIZE - 1);
+    const scatterRadius = Math.max(0, Number(config.scatterRadius || 0));
+    const scatterAngle = Math.random() * Math.PI * 2;
+    const scatterDistance = Math.random() * scatterRadius;
+    return {
+      x: clamp(predictedX + Math.cos(scatterAngle) * scatterDistance, 0, GRID_SIZE - 1),
+      y: clamp(predictedY + Math.sin(scatterAngle) * scatterDistance, 0, GRID_SIZE - 1),
+      travelTime,
+    };
+  }
+  function findTeslaJumpTarget(sourceEnemy, tower, maxDistance, excludedIds = []) {
+    const state = getState();
+    let bestEnemy = null, bestDistance = Infinity;
+    for (const enemy of state.enemies) {
+      if (enemy.hp <= 0 || excludedIds.includes(enemy.id)) continue;
+      if (!canTowerHitEnemy(tower, enemy)) continue;
+      const distance = Math.hypot(enemy.x - sourceEnemy.x, enemy.y - sourceEnemy.y);
+      if (distance <= maxDistance && distance < bestDistance - 0.0001) {
+        bestEnemy = enemy;
+        bestDistance = distance;
+      }
+    }
+    return bestEnemy;
+  }
   function chooseTarget(towerX, towerY, range, tower) {
     const state = getState();
     let bestEnemy = null, bestRemainingDistance = Infinity, bestDistanceFromTower = Infinity;
@@ -355,12 +392,30 @@ export function createSimulation(api) {
         for (const enemy of state.enemies) if (canTowerHitEnemy(tower, enemy) && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= Number(config.splashRadius)) enemy.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.12, thick: true });
         state.explosions.push({ x: target.x, y: target.y, radius: Number(config.splashRadius), ttl: 0.18 });
+      } else if (tower.type === TILE.TOWER_ARTILLERY) {
+        const impact = getArtilleryImpactPoint(x, y, target, config);
+        state.projectiles.push({ artilleryShell: true, fromX: x, fromY: y, toX: impact.x, toY: impact.y, ttl: impact.travelTime, totalTtl: impact.travelTime, damage, splashRadius: Number(config.splashRadius || 0), towerType: tower.type });
       } else if (tower.type === TILE.TOWER_SNIPER) {
         target.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.14, thick: true, sniper: true });
       } else if (tower.type === TILE.TOWER_EMP) {
         for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; if (Math.hypot(enemy.x - x, enemy.y - y) <= range) { enemy.hp -= damage; applySlow(enemy, getTowerSlowPct(tower, tower.type), Number(config.slowDuration), nowSec); } }
         state.pulses.push({ x, y, radius: range, ttl: 0.22 });
+      } else if (tower.type === TILE.TOWER_TESLA) {
+        const chainRange = Math.max(0.4, Number(config.chainRange || 2));
+        const jumpCount = Math.max(0, Math.round(Number(config.chainJumps ?? 2)));
+        const hits = [target];
+        let sourceEnemy = target;
+        for (let jumpIndex = 0; jumpIndex < jumpCount; jumpIndex += 1) {
+          const nextTarget = findTeslaJumpTarget(sourceEnemy, tower, chainRange, [sourceEnemy.id]);
+          if (!nextTarget) break;
+          hits.push(nextTarget);
+          sourceEnemy = nextTarget;
+        }
+        for (const hit of hits) hit.hp -= damage;
+        const beamColors = ['rgba(167,139,250,0.95)', 'rgba(96,165,250,0.92)', 'rgba(34,211,238,0.92)', 'rgba(125,211,252,0.88)'];
+        state.beams.push({ fromX: x, fromY: y, toX: hits[0].x, toY: hits[0].y, ttl: 0.11, width: 3, color: beamColors[0], tesla: true });
+        for (let i = 1; i < hits.length; i += 1) state.beams.push({ fromX: hits[i - 1].x, fromY: hits[i - 1].y, toX: hits[i].x, toY: hits[i].y, ttl: 0.11, width: 3, color: beamColors[Math.min(i, beamColors.length - 1)], tesla: true });
       } else if (tower.type === TILE.TOWER_RAILGUN) {
         const maxTargets = Math.max(1, Math.round(Number(config.pierceCount))), lineWidth = Number(config.lineWidth), dx = target.x - x, dy = target.y - y, targetDistance = Math.hypot(dx, dy) || 1, dirX = dx / targetDistance, dirY = dy / targetDistance, beamEndX = x + dirX * range, beamEndY = y + dirY * range, hits = [];
         for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; const fromStart = Math.hypot(enemy.x - x, enemy.y - y); if (fromStart > range) continue; const lineDist = pointLineDistance(enemy.x, enemy.y, x, y, beamEndX, beamEndY), forward = (enemy.x - x) * dirX + (enemy.y - y) * dirY; if (lineDist <= lineWidth && forward >= 0) hits.push({ enemy, forward }); }
@@ -425,7 +480,20 @@ export function createSimulation(api) {
         }
       } else nextMissiles.push({ ...missile, x: nx, y: ny, lastKnownX: tx, lastKnownY: ty, ttl: missile.ttl - dt });
     }
-    state.projectiles = state.projectiles.filter((p) => !p.missileTracking && (p.ttl - dt) > 0).map((p) => ({ ...p, ttl: p.ttl - dt })).concat(nextMissiles.filter((p) => p.ttl > 0));
+    const nextProjectiles = [];
+    for (const projectile of state.projectiles.filter((p) => !p.missileTracking)) {
+      const nextTtl = Number(projectile.ttl || 0) - dt;
+      if (projectile.artilleryShell) {
+        if (nextTtl <= 0) {
+          for (const enemy of state.enemies) {
+            if (!canTowerHitEnemy({ type: projectile.towerType }, enemy)) continue;
+            if (Math.hypot(enemy.x - projectile.toX, enemy.y - projectile.toY) <= Number(projectile.splashRadius || 0)) enemy.hp -= Number(projectile.damage || 0);
+          }
+          state.explosions.push({ x: projectile.toX, y: projectile.toY, radius: Number(projectile.splashRadius || 0), ttl: 0.28, kind: 'artillery' });
+        } else nextProjectiles.push({ ...projectile, ttl: nextTtl });
+      } else if (nextTtl > 0) nextProjectiles.push({ ...projectile, ttl: nextTtl });
+    }
+    state.projectiles = nextProjectiles.concat(nextMissiles.filter((p) => p.ttl > 0));
   }
   function updateEffects(dt) {
     const state = getState();

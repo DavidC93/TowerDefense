@@ -43,8 +43,10 @@ const configBtn = document.getElementById('configBtn');
 const buildWallBtn = document.getElementById('buildWallBtn');
 const buildTowerBtn = document.getElementById('buildTowerBtn');
 const buildCannonBtn = document.getElementById('buildCannonBtn');
+const buildArtilleryBtn = document.getElementById('buildArtilleryBtn');
 const buildSniperBtn = document.getElementById('buildSniperBtn');
 const buildEmpBtn = document.getElementById('buildEmpBtn');
+const buildTeslaBtn = document.getElementById('buildTeslaBtn');
 const buildRailgunBtn = document.getElementById('buildRailgunBtn');
 const buildFreezeBtn = document.getElementById('buildFreezeBtn');
 const buildAABtn = document.getElementById('buildAABtn');
@@ -79,7 +81,7 @@ const countdownLabelEl = document.getElementById('countdownLabel');
 const countdownValueEl = document.getElementById('countdownValue');
 
 const cellButtons = [];
-const dom = { boardEl, rangeLayerEl, entitiesLayerEl, hudStatsEl, selectedInfoEl, unitPanelContentEl, skillBarEl, skillOverlayEl, skillPromptEl, skillChoicesEl, countdownOverlayEl, countdownLabelEl, countdownValueEl, pauseBtn, buildWallBtn, buildTowerBtn, buildCannonBtn, buildSniperBtn, buildEmpBtn, buildRailgunBtn, buildFreezeBtn, buildAABtn, buildMissileBtn, buildBufferBtn, buildFlamerBtn, upgradeModeBtn, cellButtons, configGridEl, configOverlayEl, cheatsOverlayEl };
+const dom = { boardEl, rangeLayerEl, entitiesLayerEl, hudStatsEl, selectedInfoEl, unitPanelContentEl, skillBarEl, skillOverlayEl, skillPromptEl, skillChoicesEl, countdownOverlayEl, countdownLabelEl, countdownValueEl, pauseBtn, buildWallBtn, buildTowerBtn, buildCannonBtn, buildArtilleryBtn, buildSniperBtn, buildEmpBtn, buildTeslaBtn, buildRailgunBtn, buildFreezeBtn, buildAABtn, buildMissileBtn, buildBufferBtn, buildFlamerBtn, upgradeModeBtn, cellButtons, configGridEl, configOverlayEl, cheatsOverlayEl };
 let selected = null;
 let hoveredCell = null;
 let currentTool = TOOL.SELECT;
@@ -159,7 +161,7 @@ function getCellFromPointerEvent(event) {
   return getClosestFromEventTarget(pointed, '.cell') || getClosestFromEventTarget(event.target, '.cell');
 }
 function supportsPlacementRangePreview(tool) {
-  return [TOOL.TOWER, TOOL.CANNON, TOOL.SNIPER, TOOL.EMP, TOOL.RAILGUN, TOOL.FREEZE, TOOL.AA, TOOL.MISSILE, TOOL.BUFFER, TOOL.FLAMER].includes(tool);
+  return [TOOL.TOWER, TOOL.CANNON, TOOL.ARTILLERY, TOOL.SNIPER, TOOL.EMP, TOOL.TESLA, TOOL.RAILGUN, TOOL.FREEZE, TOOL.AA, TOOL.MISSILE, TOOL.BUFFER, TOOL.FLAMER].includes(tool);
 }
 function isTileUnlocked(tile) {
   return tile == null ? true : simulation.isTowerUnlocked(tile);
@@ -194,8 +196,10 @@ function setCurrentTool(tool) {
   buildWallBtn.classList.toggle('tool-inactive', tool !== TOOL.WALL);
   buildTowerBtn.classList.toggle('tool-inactive', tool !== TOOL.TOWER);
   buildCannonBtn.classList.toggle('tool-inactive', tool !== TOOL.CANNON);
+  buildArtilleryBtn.classList.toggle('tool-inactive', tool !== TOOL.ARTILLERY);
   buildSniperBtn.classList.toggle('tool-inactive', tool !== TOOL.SNIPER);
   buildEmpBtn.classList.toggle('tool-inactive', tool !== TOOL.EMP);
+  buildTeslaBtn.classList.toggle('tool-inactive', tool !== TOOL.TESLA);
   buildRailgunBtn.classList.toggle('tool-inactive', tool !== TOOL.RAILGUN);
   buildFreezeBtn.classList.toggle('tool-inactive', tool !== TOOL.FREEZE);
   buildAABtn.classList.toggle('tool-inactive', tool !== TOOL.AA);
@@ -416,8 +420,10 @@ boardEl.addEventListener('pointerdown', (event) => {
   if (currentTool === TOOL.WALL) { buildAt(x, y, TILE.WALL); return; }
   if (currentTool === TOOL.TOWER) { buildAt(x, y, TILE.TOWER_BASIC); return; }
   if (currentTool === TOOL.CANNON) { buildAt(x, y, TILE.TOWER_CANNON); return; }
+  if (currentTool === TOOL.ARTILLERY) { buildAt(x, y, TILE.TOWER_ARTILLERY); return; }
   if (currentTool === TOOL.SNIPER) { buildAt(x, y, TILE.TOWER_SNIPER); return; }
   if (currentTool === TOOL.EMP) { buildAt(x, y, TILE.TOWER_EMP); return; }
+  if (currentTool === TOOL.TESLA) { buildAt(x, y, TILE.TOWER_TESLA); return; }
   if (currentTool === TOOL.RAILGUN) { buildAt(x, y, TILE.TOWER_RAILGUN); return; }
   if (currentTool === TOOL.FREEZE) { buildAt(x, y, TILE.TOWER_FREEZE); return; }
   if (currentTool === TOOL.AA) { buildAt(x, y, TILE.TOWER_AA); return; }
@@ -504,8 +510,10 @@ unlockAllTowersBtn?.addEventListener('click', () => {
 buildWallBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.WALL ? TOOL.SELECT : TOOL.WALL));
 buildTowerBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.TOWER ? TOOL.SELECT : TOOL.TOWER));
 buildCannonBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.CANNON ? TOOL.SELECT : TOOL.CANNON));
+buildArtilleryBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.ARTILLERY ? TOOL.SELECT : TOOL.ARTILLERY));
 buildSniperBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.SNIPER ? TOOL.SELECT : TOOL.SNIPER));
 buildEmpBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.EMP ? TOOL.SELECT : TOOL.EMP));
+buildTeslaBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.TESLA ? TOOL.SELECT : TOOL.TESLA));
 buildRailgunBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.RAILGUN ? TOOL.SELECT : TOOL.RAILGUN));
 buildFreezeBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.FREEZE ? TOOL.SELECT : TOOL.FREEZE));
 buildAABtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.AA ? TOOL.SELECT : TOOL.AA));

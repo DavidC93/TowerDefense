@@ -10,8 +10,10 @@ const TILE = {
   WALL: 'wall',
   TOWER_BASIC: 'tower_basic',
   TOWER_CANNON: 'tower_cannon',
+  TOWER_ARTILLERY: 'tower_artillery',
   TOWER_SNIPER: 'tower_sniper',
   TOWER_EMP: 'tower_emp',
+  TOWER_TESLA: 'tower_tesla',
   TOWER_RAILGUN: 'tower_railgun',
   TOWER_FREEZE: 'tower_freeze',
   TOWER_AA: 'tower_aa',
@@ -25,8 +27,10 @@ const TOOL = {
   WALL: 'wall',
   TOWER: 'tower',
   CANNON: 'cannon',
+  ARTILLERY: 'artillery',
   SNIPER: 'sniper',
   EMP: 'emp',
+  TESLA: 'tesla',
   RAILGUN: 'railgun',
   FREEZE: 'freeze',
   AA: 'aa',
@@ -41,9 +45,11 @@ const TOOL_TO_TILE = {
   [TOOL.WALL]: TILE.WALL,
   [TOOL.TOWER]: TILE.TOWER_BASIC,
   [TOOL.CANNON]: TILE.TOWER_CANNON,
+  [TOOL.ARTILLERY]: TILE.TOWER_ARTILLERY,
   [TOOL.AA]: TILE.TOWER_AA,
   [TOOL.SNIPER]: TILE.TOWER_SNIPER,
   [TOOL.EMP]: TILE.TOWER_EMP,
+  [TOOL.TESLA]: TILE.TOWER_TESLA,
   [TOOL.RAILGUN]: TILE.TOWER_RAILGUN,
   [TOOL.FREEZE]: TILE.TOWER_FREEZE,
   [TOOL.MISSILE]: TILE.TOWER_MISSILE,
@@ -52,8 +58,10 @@ const TOOL_TO_TILE = {
 };
 
 const LOCKED_TOWER_TILES = [
+  TILE.TOWER_ARTILLERY,
   TILE.TOWER_SNIPER,
   TILE.TOWER_EMP,
+  TILE.TOWER_TESLA,
   TILE.TOWER_RAILGUN,
   TILE.TOWER_FREEZE,
   TILE.TOWER_MISSILE,
@@ -191,6 +199,21 @@ const DEFAULT_CONFIG = {
       upgradeDamagePct: 20,
       maxUpgradeLevel: 10
     },
+    tower_artillery: {
+      cost: 90,
+      refund: 45,
+      range: 8.5,
+      damage: 40,
+      fireRate: 20,
+      splashRadius: 2.7,
+      scatterRadius: 1.2,
+      projectileSpeed: 5.4,
+      canHitAir: 0,
+      upgradeBaseCostPct: 40,
+      upgradeStepCostPct: 40,
+      upgradeDamagePct: 20,
+      maxUpgradeLevel: 10
+    },
     tower_sniper: {
       cost: 65,
       refund: 32,
@@ -213,6 +236,21 @@ const DEFAULT_CONFIG = {
       slowDuration: 1.2,
       slowUpgradePct: 2,
       canHitAir: 1,
+      upgradeBaseCostPct: 40,
+      upgradeStepCostPct: 40,
+      upgradeDamagePct: 20,
+      maxUpgradeLevel: 10
+    },
+    tower_tesla: {
+      cost: 70,
+      refund: 35,
+      range: 2.5,
+      damage: 10,
+      fireRate: 135,
+      canHitAir: 1,
+      airOnly: 0,
+      chainJumps: 2,
+      chainRange: 2.35,
       upgradeBaseCostPct: 40,
       upgradeStepCostPct: 40,
       upgradeDamagePct: 20,
@@ -411,8 +449,10 @@ const CONFIG_SCHEMA = {
     tower_basic: { title: 'מגדל שמירה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_basic_premium: { title: 'מגדל שמירה - פרימיום', fields: { premiumCostMultiplier: { label: 'מכפיל עלות פרימיום', step: 0.1, path: 'buildings.tower_basic.premium.gatling_gun.costMultiplier' }, premiumRange: { label: 'טווח פרימיום', step: 0.1, path: 'buildings.tower_basic.premium.gatling_gun.range' }, premiumDamage: { label: 'נזק פרימיום', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.damage' }, premiumFireRate: { label: 'קצב אש פרימיום (RPM)', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.fireRate' }, premiumCanHitAir: { label: 'פרימיום תוקף אוויר 1/0', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.canHitAir' }, premiumAirOnly: { label: 'פרימיום רק אוויר 1/0', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.airOnly' }, premiumMaxCount: { label: 'מקסימום עותקים פרימיום', step: 1, path: 'buildings.tower_basic.premium.gatling_gun.maxCount' } } },
     tower_cannon: { title: 'תותח', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, splashRadius: { label: 'רדיוס פיצוץ', step: 0.05 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_artillery: { title: 'ארטילריה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, splashRadius: { label: 'רדיוס פיצוץ', step: 0.05 }, scatterRadius: { label: 'פיזור ירי', step: 0.05 }, projectileSpeed: { label: 'מהירות פגז', step: 0.1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_sniper: { title: 'צלף', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_emp: { title: 'EMP', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, slowPct: { label: 'האטה %', step: 1 }, slowDuration: { label: 'משך האטה', step: 0.1 }, slowUpgradePct: { label: 'תוספת האטה לשדרוג %', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
+    tower_tesla: { title: 'צריח טסלה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, airOnly: { label: 'רק אוויר 1/0', step: 1 }, chainJumps: { label: 'מספר קפיצות', step: 1 }, chainRange: { label: 'טווח קפיצה', step: 0.05 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_railgun: { title: 'Railgun', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, pierceCount: { label: 'כמות חדירה', step: 1 }, lineWidth: { label: 'רוחב קו', step: 0.05 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_freeze: { title: 'קרן מקפיאה', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, slowPct: { label: 'האטה %', step: 1 }, slowDuration: { label: 'משך האטה', step: 0.1 }, slowUpgradePct: { label: 'תוספת האטה לשדרוג %', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
     tower_aa: { title: 'הגנה אווירית', fields: { cost: { label: 'מחיר', step: 1 }, refund: { label: 'החזר בהריסה', step: 1 }, range: { label: 'טווח', step: 0.1 }, damage: { label: 'נזק', step: 1 }, fireRate: { label: 'קצב אש (RPM)', step: 1 }, canHitAir: { label: 'תוקף אוויר 1/0', step: 1 }, airOnly: { label: 'רק אוויר 1/0', step: 1 }, upgradeBaseCostPct: { label: 'עלות שדרוג ראשונה %', step: 1 }, upgradeStepCostPct: { label: 'תוספת % לכל שדרוג', step: 1 }, upgradeDamagePct: { label: 'תוספת נזק % לשדרוג', step: 1 }, maxUpgradeLevel: { label: 'רמת מקסימום', step: 1 } } },
@@ -456,6 +496,7 @@ function loadConfigFromStorage() {
 }
 function saveConfig(config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); }
 async function loadConfigFromDatabase() {
+  if (typeof window !== 'undefined' && window.location?.protocol === 'file:') return null;
   try {
     const response = await fetch(CONFIG_API_PATH, {
       method: 'GET',
@@ -471,6 +512,7 @@ async function loadConfigFromDatabase() {
   }
 }
 async function saveConfigToDatabase(config) {
+  if (typeof window !== 'undefined' && window.location?.protocol === 'file:') return { ok: false, skipped: true };
   const response = await fetch(CONFIG_API_PATH, {
     method: 'POST',
     headers: {
@@ -507,7 +549,7 @@ function getTowerDisplayName(config, tile, tower = null) {
   if (tile === TILE.TOWER_BASIC && tower?.premiumKey === 'gatling_gun') return config?.buildings?.tower_basic?.premium?.gatling_gun?.label || 'Gatling Gun';
   if (tile === TILE.TOWER_AA && tower?.premiumKey === 'sky_guardian') return config?.buildings?.tower_aa?.premium?.sky_guardian?.label || 'Sky Guardian';
   if (tile === TILE.TOWER_MISSILE && tower?.premiumKey === 'mini_nuke') return config?.buildings?.tower_missile?.premium?.mini_nuke?.label || 'מיני-ניוק';
-  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל שמירה', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן מקפיאה', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
+  const labels = { [TILE.EMPTY]: 'ריק', [TILE.WALL]: 'חומה', [TILE.TOWER_BASIC]: 'מגדל שמירה', [TILE.TOWER_CANNON]: 'תותח', [TILE.TOWER_ARTILLERY]: 'ארטילריה', [TILE.TOWER_SNIPER]: 'צלף', [TILE.TOWER_EMP]: 'EMP', [TILE.TOWER_TESLA]: 'צריח טסלה', [TILE.TOWER_RAILGUN]: 'Railgun', [TILE.TOWER_FREEZE]: 'קרן מקפיאה', [TILE.TOWER_AA]: 'נ"מ', [TILE.TOWER_MISSILE]: 'טילים', [TILE.TOWER_BUFFER]: 'מגדל באף', [TILE.TOWER_FLAMER]: 'להביור' };
   return labels[tile] || tile;
 }
 function getBuildingConfig(config, tile) {
@@ -515,8 +557,10 @@ function getBuildingConfig(config, tile) {
     [TILE.WALL]: config.buildings.wall,
     [TILE.TOWER_BASIC]: config.buildings.tower_basic,
     [TILE.TOWER_CANNON]: config.buildings.tower_cannon,
+    [TILE.TOWER_ARTILLERY]: config.buildings.tower_artillery,
     [TILE.TOWER_SNIPER]: config.buildings.tower_sniper,
     [TILE.TOWER_EMP]: config.buildings.tower_emp,
+    [TILE.TOWER_TESLA]: config.buildings.tower_tesla,
     [TILE.TOWER_RAILGUN]: config.buildings.tower_railgun,
     [TILE.TOWER_FREEZE]: config.buildings.tower_freeze,
     [TILE.TOWER_AA]: config.buildings.tower_aa,
@@ -792,6 +836,43 @@ function createSimulation(api) {
     }
     return remaining;
   }
+  function getEnemyVelocity(enemy) {
+    if (!enemy.path || enemy.pathIndex >= enemy.path.length) return { x: 0, y: 0 };
+    const nextWaypoint = enemy.path[enemy.pathIndex];
+    const dx = nextWaypoint.x - enemy.x, dy = nextWaypoint.y - enemy.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    return { x: (dx / distance) * Number(enemy.speed || 0), y: (dy / distance) * Number(enemy.speed || 0) };
+  }
+  function getArtilleryImpactPoint(towerX, towerY, target, config) {
+    const projectileSpeed = Math.max(1, Number(config.projectileSpeed || 5));
+    const initialDistance = Math.hypot(target.x - towerX, target.y - towerY);
+    const travelTime = Math.max(0.22, initialDistance / projectileSpeed);
+    const velocity = getEnemyVelocity(target);
+    const predictedX = clamp(target.x + velocity.x * travelTime, 0, GRID_SIZE - 1);
+    const predictedY = clamp(target.y + velocity.y * travelTime, 0, GRID_SIZE - 1);
+    const scatterRadius = Math.max(0, Number(config.scatterRadius || 0));
+    const scatterAngle = Math.random() * Math.PI * 2;
+    const scatterDistance = Math.random() * scatterRadius;
+    return {
+      x: clamp(predictedX + Math.cos(scatterAngle) * scatterDistance, 0, GRID_SIZE - 1),
+      y: clamp(predictedY + Math.sin(scatterAngle) * scatterDistance, 0, GRID_SIZE - 1),
+      travelTime,
+    };
+  }
+  function findTeslaJumpTarget(sourceEnemy, tower, maxDistance, excludedIds = []) {
+    const state = getState();
+    let bestEnemy = null, bestDistance = Infinity;
+    for (const enemy of state.enemies) {
+      if (enemy.hp <= 0 || excludedIds.includes(enemy.id)) continue;
+      if (!canTowerHitEnemy(tower, enemy)) continue;
+      const distance = Math.hypot(enemy.x - sourceEnemy.x, enemy.y - sourceEnemy.y);
+      if (distance <= maxDistance && distance < bestDistance - 0.0001) {
+        bestEnemy = enemy;
+        bestDistance = distance;
+      }
+    }
+    return bestEnemy;
+  }
   function chooseTarget(towerX, towerY, range, tower) {
     const state = getState();
     let bestEnemy = null, bestRemainingDistance = Infinity, bestDistanceFromTower = Infinity;
@@ -885,12 +966,30 @@ function createSimulation(api) {
         for (const enemy of state.enemies) if (canTowerHitEnemy(tower, enemy) && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= Number(config.splashRadius)) enemy.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.12, thick: true });
         state.explosions.push({ x: target.x, y: target.y, radius: Number(config.splashRadius), ttl: 0.18 });
+      } else if (tower.type === TILE.TOWER_ARTILLERY) {
+        const impact = getArtilleryImpactPoint(x, y, target, config);
+        state.projectiles.push({ artilleryShell: true, fromX: x, fromY: y, toX: impact.x, toY: impact.y, ttl: impact.travelTime, totalTtl: impact.travelTime, damage, splashRadius: Number(config.splashRadius || 0), towerType: tower.type });
       } else if (tower.type === TILE.TOWER_SNIPER) {
         target.hp -= damage;
         state.projectiles.push({ fromX: x, fromY: y, toX: target.x, toY: target.y, ttl: 0.14, thick: true, sniper: true });
       } else if (tower.type === TILE.TOWER_EMP) {
         for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; if (Math.hypot(enemy.x - x, enemy.y - y) <= range) { enemy.hp -= damage; applySlow(enemy, getTowerSlowPct(tower, tower.type), Number(config.slowDuration), nowSec); } }
         state.pulses.push({ x, y, radius: range, ttl: 0.22 });
+      } else if (tower.type === TILE.TOWER_TESLA) {
+        const chainRange = Math.max(0.4, Number(config.chainRange || 2));
+        const jumpCount = Math.max(0, Math.round(Number(config.chainJumps ?? 2)));
+        const hits = [target];
+        let sourceEnemy = target;
+        for (let jumpIndex = 0; jumpIndex < jumpCount; jumpIndex += 1) {
+          const nextTarget = findTeslaJumpTarget(sourceEnemy, tower, chainRange, [sourceEnemy.id]);
+          if (!nextTarget) break;
+          hits.push(nextTarget);
+          sourceEnemy = nextTarget;
+        }
+        for (const hit of hits) hit.hp -= damage;
+        const beamColors = ['rgba(167,139,250,0.95)', 'rgba(96,165,250,0.92)', 'rgba(34,211,238,0.92)', 'rgba(125,211,252,0.88)'];
+        state.beams.push({ fromX: x, fromY: y, toX: hits[0].x, toY: hits[0].y, ttl: 0.11, width: 3, color: beamColors[0], tesla: true });
+        for (let i = 1; i < hits.length; i += 1) state.beams.push({ fromX: hits[i - 1].x, fromY: hits[i - 1].y, toX: hits[i].x, toY: hits[i].y, ttl: 0.11, width: 3, color: beamColors[Math.min(i, beamColors.length - 1)], tesla: true });
       } else if (tower.type === TILE.TOWER_RAILGUN) {
         const maxTargets = Math.max(1, Math.round(Number(config.pierceCount))), lineWidth = Number(config.lineWidth), dx = target.x - x, dy = target.y - y, targetDistance = Math.hypot(dx, dy) || 1, dirX = dx / targetDistance, dirY = dy / targetDistance, beamEndX = x + dirX * range, beamEndY = y + dirY * range, hits = [];
         for (const enemy of state.enemies) { if (!canTowerHitEnemy(tower, enemy)) continue; const fromStart = Math.hypot(enemy.x - x, enemy.y - y); if (fromStart > range) continue; const lineDist = pointLineDistance(enemy.x, enemy.y, x, y, beamEndX, beamEndY), forward = (enemy.x - x) * dirX + (enemy.y - y) * dirY; if (lineDist <= lineWidth && forward >= 0) hits.push({ enemy, forward }); }
@@ -955,7 +1054,20 @@ function createSimulation(api) {
         }
       } else nextMissiles.push({ ...missile, x: nx, y: ny, lastKnownX: tx, lastKnownY: ty, ttl: missile.ttl - dt });
     }
-    state.projectiles = state.projectiles.filter((p) => !p.missileTracking && (p.ttl - dt) > 0).map((p) => ({ ...p, ttl: p.ttl - dt })).concat(nextMissiles.filter((p) => p.ttl > 0));
+    const nextProjectiles = [];
+    for (const projectile of state.projectiles.filter((p) => !p.missileTracking)) {
+      const nextTtl = Number(projectile.ttl || 0) - dt;
+      if (projectile.artilleryShell) {
+        if (nextTtl <= 0) {
+          for (const enemy of state.enemies) {
+            if (!canTowerHitEnemy({ type: projectile.towerType }, enemy)) continue;
+            if (Math.hypot(enemy.x - projectile.toX, enemy.y - projectile.toY) <= Number(projectile.splashRadius || 0)) enemy.hp -= Number(projectile.damage || 0);
+          }
+          state.explosions.push({ x: projectile.toX, y: projectile.toY, radius: Number(projectile.splashRadius || 0), ttl: 0.28, kind: 'artillery' });
+        } else nextProjectiles.push({ ...projectile, ttl: nextTtl });
+      } else if (nextTtl > 0) nextProjectiles.push({ ...projectile, ttl: nextTtl });
+    }
+    state.projectiles = nextProjectiles.concat(nextMissiles.filter((p) => p.ttl > 0));
   }
   function updateEffects(dt) {
     const state = getState();
@@ -1009,8 +1121,10 @@ const RENDER_ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
 const TOOL_PREVIEW_MAP = {
   [TOOL.TOWER]: { tile: TILE.TOWER_BASIC, label: 'GS' },
   [TOOL.CANNON]: { tile: TILE.TOWER_CANNON, label: 'C' },
+  [TOOL.ARTILLERY]: { tile: TILE.TOWER_ARTILLERY, label: 'AR' },
   [TOOL.SNIPER]: { tile: TILE.TOWER_SNIPER, label: 'S' },
   [TOOL.EMP]: { tile: TILE.TOWER_EMP, label: 'E' },
+  [TOOL.TESLA]: { tile: TILE.TOWER_TESLA, label: 'TS' },
   [TOOL.RAILGUN]: { tile: TILE.TOWER_RAILGUN, label: 'R' },
   [TOOL.FREEZE]: { tile: TILE.TOWER_FREEZE, label: 'F' },
   [TOOL.AA]: { tile: TILE.TOWER_AA, label: 'AA' },
@@ -1045,8 +1159,10 @@ function createRenderer(api) {
     setBuildButtonContent(dom.buildWallBtn, 'חומה', `${Math.round(config.buildings.wall.cost)}$`, 'assets/towers/wall.svg', TILE.WALL);
     setBuildButtonContent(dom.buildTowerBtn, 'מגדל שמירה', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg', TILE.TOWER_BASIC);
     setBuildButtonContent(dom.buildCannonBtn, 'תותח', `${Math.round(config.buildings.tower_cannon.cost)}$`, 'assets/towers/cannon.svg', TILE.TOWER_CANNON);
+    setBuildButtonContent(dom.buildArtilleryBtn, 'ארטילריה', `${Math.round(config.buildings.tower_artillery.cost)}$`, 'assets/towers/artillery.svg', TILE.TOWER_ARTILLERY);
     setBuildButtonContent(dom.buildSniperBtn, 'צלף', `${Math.round(config.buildings.tower_sniper.cost)}$`, 'assets/towers/sniper.svg', TILE.TOWER_SNIPER);
     setBuildButtonContent(dom.buildEmpBtn, 'EMP', `${Math.round(config.buildings.tower_emp.cost)}$`, 'assets/towers/emp.svg', TILE.TOWER_EMP);
+    setBuildButtonContent(dom.buildTeslaBtn, 'צריח טסלה', `${Math.round(config.buildings.tower_tesla.cost)}$`, 'assets/towers/tesla.svg', TILE.TOWER_TESLA);
     setBuildButtonContent(dom.buildRailgunBtn, 'Railgun', `${Math.round(config.buildings.tower_railgun.cost)}$`, 'assets/towers/railgun.svg', TILE.TOWER_RAILGUN);
     setBuildButtonContent(dom.buildFreezeBtn, 'קרן מקפיאה', `${Math.round(config.buildings.tower_freeze.cost)}$`, 'assets/towers/freeze.svg', TILE.TOWER_FREEZE);
     setBuildButtonContent(dom.buildAABtn, 'נ"מ', `${Math.round(config.buildings.tower_aa.cost)}$`, 'assets/towers/aa.svg', TILE.TOWER_AA);
@@ -1095,7 +1211,7 @@ function createRenderer(api) {
   }
   function renderSelectedInfo() {
     const dom = getDom(), selected = getSelected(), state = getState();
-    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.AA]: 'נ"מ', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן מקפיאה', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
+    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.ARTILLERY]: 'ארטילריה', [TOOL.AA]: 'נ"מ', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.TESLA]: 'צריח טסלה', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן מקפיאה', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
     if (state.skills.pendingTargetSkill) { dom.selectedInfoEl.textContent = `בחר משבצת עבור ${skillLabel(state.skills.pendingTargetSkill)}`; return; }
     if (state.pendingSkillChoice) { dom.selectedInfoEl.textContent = 'המשחק ממתין לבחירת סקיל'; return; }
     if (!selected) { dom.selectedInfoEl.textContent = `מצב: ${labels[getCurrentTool()]}`; return; }
@@ -1116,9 +1232,11 @@ function createRenderer(api) {
         else if (tile === TILE.WALL) button.classList.add('wall');
         else if (tile === TILE.TOWER_BASIC) { button.classList.add('tower_basic'); button.textContent = tower?.premiumKey === 'gatling_gun' ? 'GG' : 'GS'; }
         else if (tile === TILE.TOWER_CANNON) { button.classList.add('tower_cannon'); button.textContent = 'C'; }
+        else if (tile === TILE.TOWER_ARTILLERY) { button.classList.add('tower_artillery'); button.textContent = 'AR'; }
         else if (tile === TILE.TOWER_AA) { button.classList.add('tower_aa'); button.textContent = tower?.premiumKey === 'sky_guardian' ? 'SAM' : 'AA'; }
         else if (tile === TILE.TOWER_SNIPER) { button.classList.add('tower_sniper'); button.textContent = 'S'; }
         else if (tile === TILE.TOWER_EMP) { button.classList.add('tower_emp'); button.textContent = 'E'; }
+        else if (tile === TILE.TOWER_TESLA) { button.classList.add('tower_tesla'); button.textContent = 'TS'; }
         else if (tile === TILE.TOWER_RAILGUN) { button.classList.add('tower_railgun'); button.textContent = 'R'; }
         else if (tile === TILE.TOWER_FREEZE) { button.classList.add('tower_freeze'); button.textContent = 'F'; }
         else if (tile === TILE.TOWER_MISSILE) { button.classList.add('tower_missile'); button.textContent = tower?.premiumKey === 'mini_nuke' ? 'NUKE' : 'M'; }
@@ -1142,6 +1260,24 @@ function createRenderer(api) {
       }
     }
   }
+  function buildTeslaArcSvg(beam, from, to, length) {
+    const amplitude = Math.max(6, Number(beam.width || 3) * 3.5);
+    const segments = Math.max(5, Math.round(length / 18));
+    const points = ['0,0'];
+    for (let i = 1; i < segments; i += 1) {
+      const x = (length / segments) * i;
+      const y = (i % 2 === 0 ? -1 : 1) * amplitude * (0.55 + Math.random() * 0.45);
+      points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    points.push(`${length.toFixed(1)},0`);
+    const stroke = beam.color || 'rgba(167,139,250,0.95)';
+    const glowWidth = Math.max(beam.width * 2.4, 6);
+    const coreWidth = Math.max(beam.width, 2);
+    const height = amplitude * 2 + glowWidth * 2;
+    const viewBoxY = -height / 2;
+    return `<svg class="tesla-arc" style="left:${from.x}px;top:${from.y}px;width:${length}px;height:${height}px;transform:rotate(${Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI}deg)" viewBox="0 ${viewBoxY} ${length} ${height}" preserveAspectRatio="none"><polyline points="${points.join(' ')}" fill="none" stroke="${stroke}" stroke-width="${glowWidth}" stroke-linecap="round" stroke-linejoin="round" opacity="0.24"/><polyline points="${points.join(' ')}" fill="none" stroke="${stroke}" stroke-width="${coreWidth}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
   function renderRangeIndicator() {
     const dom = getDom(), selected = getSelected(), hoveredCell = getHoveredCell(), state = getState(), simulation = getSimulation(), tool = getCurrentTool();
     dom.rangeLayerEl.innerHTML = '';
@@ -1181,6 +1317,15 @@ function createRenderer(api) {
       }
     }
     for (const projectile of state.projectiles) {
+      if (projectile.artilleryShell) {
+        const progress = Math.max(0, Math.min(1, 1 - (projectile.ttl / Math.max(projectile.totalTtl || 0.001, 0.001))));
+        const arcLift = Math.sin(progress * Math.PI) * cell * 1.2;
+        const px = projectile.fromX + ((projectile.toX - projectile.fromX) * progress);
+        const py = projectile.fromY + ((projectile.toY - projectile.fromY) * progress) - (arcLift / cell);
+        const center = cellCenterPx(px, py);
+        html += `<div class="projectile-shell" style="left:${center.x}px;top:${center.y}px;"></div>`;
+        continue;
+      }
       if (projectile.missileTracking) {
         const center = cellCenterPx(projectile.x, projectile.y);
         const tint = projectile.antiAirMissile ? 'rgba(125,211,252,0.98)' : 'rgba(245,158,11,0.95)';
@@ -1194,15 +1339,18 @@ function createRenderer(api) {
     for (const beam of state.beams) {
       const from = cellCenterPx(beam.fromX, beam.fromY), to = cellCenterPx(beam.toX, beam.toY), dx = to.x - from.x, dy = to.y - from.y, length = Math.hypot(dx, dy), angle = Math.atan2(dy, dx) * 180 / Math.PI;
       if (beam.flame) html += `<div class="flame-stream" style="left:${from.x}px;top:${from.y}px;width:${length}px;height:30px;transform:translateY(-50%) rotate(${angle}deg)"><div class="flame-glow" style="width:${length}px;"></div><div class="flame-core-2" style="width:${length * 0.94}px;"></div><div class="flame-core" style="width:${length * 0.86}px;"></div></div>`;
+      else if (beam.tesla) html += buildTeslaArcSvg(beam, from, to, length);
       else html += `<div class="beam" style="left:${from.x}px;top:${from.y}px;width:${length}px;height:${beam.width}px;background:${beam.color};box-shadow:0 0 10px ${beam.color};transform:rotate(${angle}deg)"></div>`;
     }
     for (const explosion of state.explosions) {
-      const baseTtl = explosion.kind === 'mini_nuke' ? 0.48 : (explosion.kind === 'anti_air_hit' ? 0.18 : 0.22);
+      const baseTtl = explosion.kind === 'mini_nuke' ? 0.48 : (explosion.kind === 'artillery' ? 0.28 : (explosion.kind === 'anti_air_hit' ? 0.18 : 0.22));
       const center = cellCenterPx(explosion.x, explosion.y), progress = 1 - (explosion.ttl / baseTtl), size = explosion.radius * 2 * cell * (0.7 + progress * (explosion.kind === 'mini_nuke' ? 1.1 : 0.7)), alpha = Math.max(0, explosion.ttl / baseTtl);
       if (explosion.kind === 'mini_nuke') {
         html += `<div class="explosion explosion-nuke" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha}"></div>`;
         html += `<div class="explosion-shockwave" style="left:${center.x}px;top:${center.y}px;width:${size * 1.32}px;height:${size * 1.32}px;opacity:${alpha * 0.88}"></div>`;
         html += `<div class="explosion-flash" style="left:${center.x}px;top:${center.y}px;width:${size * 0.72}px;height:${size * 0.72}px;opacity:${Math.min(1, alpha * 1.2)}"></div>`;
+      } else if (explosion.kind === 'artillery') {
+        html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha};border-color:rgba(251,146,60,0.82);background:rgba(251,146,60,0.24);box-shadow:0 0 24px rgba(249,115,22,0.34)"></div>`;
       } else if (explosion.kind === 'anti_air_hit') {
         html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha};border-color:rgba(125,211,252,0.85);background:rgba(125,211,252,0.24);box-shadow:0 0 20px rgba(125,211,252,0.34)"></div>`;
       } else html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha}"></div>`;
@@ -1447,8 +1595,10 @@ const configBtn = document.getElementById('configBtn');
 const buildWallBtn = document.getElementById('buildWallBtn');
 const buildTowerBtn = document.getElementById('buildTowerBtn');
 const buildCannonBtn = document.getElementById('buildCannonBtn');
+const buildArtilleryBtn = document.getElementById('buildArtilleryBtn');
 const buildSniperBtn = document.getElementById('buildSniperBtn');
 const buildEmpBtn = document.getElementById('buildEmpBtn');
+const buildTeslaBtn = document.getElementById('buildTeslaBtn');
 const buildRailgunBtn = document.getElementById('buildRailgunBtn');
 const buildFreezeBtn = document.getElementById('buildFreezeBtn');
 const buildAABtn = document.getElementById('buildAABtn');
@@ -1483,7 +1633,7 @@ const countdownLabelEl = document.getElementById('countdownLabel');
 const countdownValueEl = document.getElementById('countdownValue');
 
 const cellButtons = [];
-const dom = { boardEl, rangeLayerEl, entitiesLayerEl, hudStatsEl, selectedInfoEl, unitPanelContentEl, skillBarEl, skillOverlayEl, skillPromptEl, skillChoicesEl, countdownOverlayEl, countdownLabelEl, countdownValueEl, pauseBtn, buildWallBtn, buildTowerBtn, buildCannonBtn, buildSniperBtn, buildEmpBtn, buildRailgunBtn, buildFreezeBtn, buildAABtn, buildMissileBtn, buildBufferBtn, buildFlamerBtn, upgradeModeBtn, cellButtons, configGridEl, configOverlayEl, cheatsOverlayEl };
+const dom = { boardEl, rangeLayerEl, entitiesLayerEl, hudStatsEl, selectedInfoEl, unitPanelContentEl, skillBarEl, skillOverlayEl, skillPromptEl, skillChoicesEl, countdownOverlayEl, countdownLabelEl, countdownValueEl, pauseBtn, buildWallBtn, buildTowerBtn, buildCannonBtn, buildArtilleryBtn, buildSniperBtn, buildEmpBtn, buildTeslaBtn, buildRailgunBtn, buildFreezeBtn, buildAABtn, buildMissileBtn, buildBufferBtn, buildFlamerBtn, upgradeModeBtn, cellButtons, configGridEl, configOverlayEl, cheatsOverlayEl };
 let selected = null;
 let hoveredCell = null;
 let currentTool = TOOL.SELECT;
@@ -1563,7 +1713,7 @@ function getCellFromPointerEvent(event) {
   return getClosestFromEventTarget(pointed, '.cell') || getClosestFromEventTarget(event.target, '.cell');
 }
 function supportsPlacementRangePreview(tool) {
-  return [TOOL.TOWER, TOOL.CANNON, TOOL.SNIPER, TOOL.EMP, TOOL.RAILGUN, TOOL.FREEZE, TOOL.AA, TOOL.MISSILE, TOOL.BUFFER, TOOL.FLAMER].includes(tool);
+  return [TOOL.TOWER, TOOL.CANNON, TOOL.ARTILLERY, TOOL.SNIPER, TOOL.EMP, TOOL.TESLA, TOOL.RAILGUN, TOOL.FREEZE, TOOL.AA, TOOL.MISSILE, TOOL.BUFFER, TOOL.FLAMER].includes(tool);
 }
 function isTileUnlocked(tile) {
   return tile == null ? true : simulation.isTowerUnlocked(tile);
@@ -1598,8 +1748,10 @@ function setCurrentTool(tool) {
   buildWallBtn.classList.toggle('tool-inactive', tool !== TOOL.WALL);
   buildTowerBtn.classList.toggle('tool-inactive', tool !== TOOL.TOWER);
   buildCannonBtn.classList.toggle('tool-inactive', tool !== TOOL.CANNON);
+  buildArtilleryBtn.classList.toggle('tool-inactive', tool !== TOOL.ARTILLERY);
   buildSniperBtn.classList.toggle('tool-inactive', tool !== TOOL.SNIPER);
   buildEmpBtn.classList.toggle('tool-inactive', tool !== TOOL.EMP);
+  buildTeslaBtn.classList.toggle('tool-inactive', tool !== TOOL.TESLA);
   buildRailgunBtn.classList.toggle('tool-inactive', tool !== TOOL.RAILGUN);
   buildFreezeBtn.classList.toggle('tool-inactive', tool !== TOOL.FREEZE);
   buildAABtn.classList.toggle('tool-inactive', tool !== TOOL.AA);
@@ -1820,8 +1972,10 @@ boardEl.addEventListener('pointerdown', (event) => {
   if (currentTool === TOOL.WALL) { buildAt(x, y, TILE.WALL); return; }
   if (currentTool === TOOL.TOWER) { buildAt(x, y, TILE.TOWER_BASIC); return; }
   if (currentTool === TOOL.CANNON) { buildAt(x, y, TILE.TOWER_CANNON); return; }
+  if (currentTool === TOOL.ARTILLERY) { buildAt(x, y, TILE.TOWER_ARTILLERY); return; }
   if (currentTool === TOOL.SNIPER) { buildAt(x, y, TILE.TOWER_SNIPER); return; }
   if (currentTool === TOOL.EMP) { buildAt(x, y, TILE.TOWER_EMP); return; }
+  if (currentTool === TOOL.TESLA) { buildAt(x, y, TILE.TOWER_TESLA); return; }
   if (currentTool === TOOL.RAILGUN) { buildAt(x, y, TILE.TOWER_RAILGUN); return; }
   if (currentTool === TOOL.FREEZE) { buildAt(x, y, TILE.TOWER_FREEZE); return; }
   if (currentTool === TOOL.AA) { buildAt(x, y, TILE.TOWER_AA); return; }
@@ -1908,8 +2062,10 @@ unlockAllTowersBtn?.addEventListener('click', () => {
 buildWallBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.WALL ? TOOL.SELECT : TOOL.WALL));
 buildTowerBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.TOWER ? TOOL.SELECT : TOOL.TOWER));
 buildCannonBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.CANNON ? TOOL.SELECT : TOOL.CANNON));
+buildArtilleryBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.ARTILLERY ? TOOL.SELECT : TOOL.ARTILLERY));
 buildSniperBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.SNIPER ? TOOL.SELECT : TOOL.SNIPER));
 buildEmpBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.EMP ? TOOL.SELECT : TOOL.EMP));
+buildTeslaBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.TESLA ? TOOL.SELECT : TOOL.TESLA));
 buildRailgunBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.RAILGUN ? TOOL.SELECT : TOOL.RAILGUN));
 buildFreezeBtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.FREEZE ? TOOL.SELECT : TOOL.FREEZE));
 buildAABtn.addEventListener('click', () => setCurrentTool(currentTool === TOOL.AA ? TOOL.SELECT : TOOL.AA));

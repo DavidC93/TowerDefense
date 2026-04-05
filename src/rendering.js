@@ -4,8 +4,10 @@ const RENDER_ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
 const TOOL_PREVIEW_MAP = {
   [TOOL.TOWER]: { tile: TILE.TOWER_BASIC, label: 'GS' },
   [TOOL.CANNON]: { tile: TILE.TOWER_CANNON, label: 'C' },
+  [TOOL.ARTILLERY]: { tile: TILE.TOWER_ARTILLERY, label: 'AR' },
   [TOOL.SNIPER]: { tile: TILE.TOWER_SNIPER, label: 'S' },
   [TOOL.EMP]: { tile: TILE.TOWER_EMP, label: 'E' },
+  [TOOL.TESLA]: { tile: TILE.TOWER_TESLA, label: 'TS' },
   [TOOL.RAILGUN]: { tile: TILE.TOWER_RAILGUN, label: 'R' },
   [TOOL.FREEZE]: { tile: TILE.TOWER_FREEZE, label: 'F' },
   [TOOL.AA]: { tile: TILE.TOWER_AA, label: 'AA' },
@@ -40,8 +42,10 @@ export function createRenderer(api) {
     setBuildButtonContent(dom.buildWallBtn, 'חומה', `${Math.round(config.buildings.wall.cost)}$`, 'assets/towers/wall.svg', TILE.WALL);
     setBuildButtonContent(dom.buildTowerBtn, 'מגדל שמירה', `${Math.round(config.buildings.tower_basic.cost)}$`, 'assets/towers/basic.svg', TILE.TOWER_BASIC);
     setBuildButtonContent(dom.buildCannonBtn, 'תותח', `${Math.round(config.buildings.tower_cannon.cost)}$`, 'assets/towers/cannon.svg', TILE.TOWER_CANNON);
+    setBuildButtonContent(dom.buildArtilleryBtn, 'ארטילריה', `${Math.round(config.buildings.tower_artillery.cost)}$`, 'assets/towers/artillery.svg', TILE.TOWER_ARTILLERY);
     setBuildButtonContent(dom.buildSniperBtn, 'צלף', `${Math.round(config.buildings.tower_sniper.cost)}$`, 'assets/towers/sniper.svg', TILE.TOWER_SNIPER);
     setBuildButtonContent(dom.buildEmpBtn, 'EMP', `${Math.round(config.buildings.tower_emp.cost)}$`, 'assets/towers/emp.svg', TILE.TOWER_EMP);
+    setBuildButtonContent(dom.buildTeslaBtn, 'צריח טסלה', `${Math.round(config.buildings.tower_tesla.cost)}$`, 'assets/towers/tesla.svg', TILE.TOWER_TESLA);
     setBuildButtonContent(dom.buildRailgunBtn, 'Railgun', `${Math.round(config.buildings.tower_railgun.cost)}$`, 'assets/towers/railgun.svg', TILE.TOWER_RAILGUN);
     setBuildButtonContent(dom.buildFreezeBtn, 'קרן מקפיאה', `${Math.round(config.buildings.tower_freeze.cost)}$`, 'assets/towers/freeze.svg', TILE.TOWER_FREEZE);
     setBuildButtonContent(dom.buildAABtn, 'נ"מ', `${Math.round(config.buildings.tower_aa.cost)}$`, 'assets/towers/aa.svg', TILE.TOWER_AA);
@@ -90,7 +94,7 @@ export function createRenderer(api) {
   }
   function renderSelectedInfo() {
     const dom = getDom(), selected = getSelected(), state = getState();
-    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.AA]: 'נ"מ', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן מקפיאה', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
+    const labels = { [TOOL.SELECT]: 'בחירה', [TOOL.WALL]: 'חומה', [TOOL.TOWER]: 'מגדל שמירה', [TOOL.CANNON]: 'תותח', [TOOL.ARTILLERY]: 'ארטילריה', [TOOL.AA]: 'נ"מ', [TOOL.SNIPER]: 'צלף', [TOOL.EMP]: 'EMP', [TOOL.TESLA]: 'צריח טסלה', [TOOL.RAILGUN]: 'Railgun', [TOOL.FREEZE]: 'קרן מקפיאה', [TOOL.MISSILE]: 'טילים', [TOOL.BUFFER]: 'באף', [TOOL.FLAMER]: 'להביור', [TOOL.UPGRADE]: 'שדרוג מהיר', [TOOL.DESTROY]: 'הריסה' };
     if (state.skills.pendingTargetSkill) { dom.selectedInfoEl.textContent = `בחר משבצת עבור ${skillLabel(state.skills.pendingTargetSkill)}`; return; }
     if (state.pendingSkillChoice) { dom.selectedInfoEl.textContent = 'המשחק ממתין לבחירת סקיל'; return; }
     if (!selected) { dom.selectedInfoEl.textContent = `מצב: ${labels[getCurrentTool()]}`; return; }
@@ -111,9 +115,11 @@ export function createRenderer(api) {
         else if (tile === TILE.WALL) button.classList.add('wall');
         else if (tile === TILE.TOWER_BASIC) { button.classList.add('tower_basic'); button.textContent = tower?.premiumKey === 'gatling_gun' ? 'GG' : 'GS'; }
         else if (tile === TILE.TOWER_CANNON) { button.classList.add('tower_cannon'); button.textContent = 'C'; }
+        else if (tile === TILE.TOWER_ARTILLERY) { button.classList.add('tower_artillery'); button.textContent = 'AR'; }
         else if (tile === TILE.TOWER_AA) { button.classList.add('tower_aa'); button.textContent = tower?.premiumKey === 'sky_guardian' ? 'SAM' : 'AA'; }
         else if (tile === TILE.TOWER_SNIPER) { button.classList.add('tower_sniper'); button.textContent = 'S'; }
         else if (tile === TILE.TOWER_EMP) { button.classList.add('tower_emp'); button.textContent = 'E'; }
+        else if (tile === TILE.TOWER_TESLA) { button.classList.add('tower_tesla'); button.textContent = 'TS'; }
         else if (tile === TILE.TOWER_RAILGUN) { button.classList.add('tower_railgun'); button.textContent = 'R'; }
         else if (tile === TILE.TOWER_FREEZE) { button.classList.add('tower_freeze'); button.textContent = 'F'; }
         else if (tile === TILE.TOWER_MISSILE) { button.classList.add('tower_missile'); button.textContent = tower?.premiumKey === 'mini_nuke' ? 'NUKE' : 'M'; }
@@ -137,6 +143,24 @@ export function createRenderer(api) {
       }
     }
   }
+  function buildTeslaArcSvg(beam, from, to, length) {
+    const amplitude = Math.max(6, Number(beam.width || 3) * 3.5);
+    const segments = Math.max(5, Math.round(length / 18));
+    const points = ['0,0'];
+    for (let i = 1; i < segments; i += 1) {
+      const x = (length / segments) * i;
+      const y = (i % 2 === 0 ? -1 : 1) * amplitude * (0.55 + Math.random() * 0.45);
+      points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    points.push(`${length.toFixed(1)},0`);
+    const stroke = beam.color || 'rgba(167,139,250,0.95)';
+    const glowWidth = Math.max(beam.width * 2.4, 6);
+    const coreWidth = Math.max(beam.width, 2);
+    const height = amplitude * 2 + glowWidth * 2;
+    const viewBoxY = -height / 2;
+    return `<svg class="tesla-arc" style="left:${from.x}px;top:${from.y}px;width:${length}px;height:${height}px;transform:rotate(${Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI}deg)" viewBox="0 ${viewBoxY} ${length} ${height}" preserveAspectRatio="none"><polyline points="${points.join(' ')}" fill="none" stroke="${stroke}" stroke-width="${glowWidth}" stroke-linecap="round" stroke-linejoin="round" opacity="0.24"/><polyline points="${points.join(' ')}" fill="none" stroke="${stroke}" stroke-width="${coreWidth}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
   function renderRangeIndicator() {
     const dom = getDom(), selected = getSelected(), hoveredCell = getHoveredCell(), state = getState(), simulation = getSimulation(), tool = getCurrentTool();
     dom.rangeLayerEl.innerHTML = '';
@@ -176,6 +200,15 @@ export function createRenderer(api) {
       }
     }
     for (const projectile of state.projectiles) {
+      if (projectile.artilleryShell) {
+        const progress = Math.max(0, Math.min(1, 1 - (projectile.ttl / Math.max(projectile.totalTtl || 0.001, 0.001))));
+        const arcLift = Math.sin(progress * Math.PI) * cell * 1.2;
+        const px = projectile.fromX + ((projectile.toX - projectile.fromX) * progress);
+        const py = projectile.fromY + ((projectile.toY - projectile.fromY) * progress) - (arcLift / cell);
+        const center = cellCenterPx(px, py);
+        html += `<div class="projectile-shell" style="left:${center.x}px;top:${center.y}px;"></div>`;
+        continue;
+      }
       if (projectile.missileTracking) {
         const center = cellCenterPx(projectile.x, projectile.y);
         const tint = projectile.antiAirMissile ? 'rgba(125,211,252,0.98)' : 'rgba(245,158,11,0.95)';
@@ -189,15 +222,18 @@ export function createRenderer(api) {
     for (const beam of state.beams) {
       const from = cellCenterPx(beam.fromX, beam.fromY), to = cellCenterPx(beam.toX, beam.toY), dx = to.x - from.x, dy = to.y - from.y, length = Math.hypot(dx, dy), angle = Math.atan2(dy, dx) * 180 / Math.PI;
       if (beam.flame) html += `<div class="flame-stream" style="left:${from.x}px;top:${from.y}px;width:${length}px;height:30px;transform:translateY(-50%) rotate(${angle}deg)"><div class="flame-glow" style="width:${length}px;"></div><div class="flame-core-2" style="width:${length * 0.94}px;"></div><div class="flame-core" style="width:${length * 0.86}px;"></div></div>`;
+      else if (beam.tesla) html += buildTeslaArcSvg(beam, from, to, length);
       else html += `<div class="beam" style="left:${from.x}px;top:${from.y}px;width:${length}px;height:${beam.width}px;background:${beam.color};box-shadow:0 0 10px ${beam.color};transform:rotate(${angle}deg)"></div>`;
     }
     for (const explosion of state.explosions) {
-      const baseTtl = explosion.kind === 'mini_nuke' ? 0.48 : (explosion.kind === 'anti_air_hit' ? 0.18 : 0.22);
+      const baseTtl = explosion.kind === 'mini_nuke' ? 0.48 : (explosion.kind === 'artillery' ? 0.28 : (explosion.kind === 'anti_air_hit' ? 0.18 : 0.22));
       const center = cellCenterPx(explosion.x, explosion.y), progress = 1 - (explosion.ttl / baseTtl), size = explosion.radius * 2 * cell * (0.7 + progress * (explosion.kind === 'mini_nuke' ? 1.1 : 0.7)), alpha = Math.max(0, explosion.ttl / baseTtl);
       if (explosion.kind === 'mini_nuke') {
         html += `<div class="explosion explosion-nuke" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha}"></div>`;
         html += `<div class="explosion-shockwave" style="left:${center.x}px;top:${center.y}px;width:${size * 1.32}px;height:${size * 1.32}px;opacity:${alpha * 0.88}"></div>`;
         html += `<div class="explosion-flash" style="left:${center.x}px;top:${center.y}px;width:${size * 0.72}px;height:${size * 0.72}px;opacity:${Math.min(1, alpha * 1.2)}"></div>`;
+      } else if (explosion.kind === 'artillery') {
+        html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha};border-color:rgba(251,146,60,0.82);background:rgba(251,146,60,0.24);box-shadow:0 0 24px rgba(249,115,22,0.34)"></div>`;
       } else if (explosion.kind === 'anti_air_hit') {
         html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha};border-color:rgba(125,211,252,0.85);background:rgba(125,211,252,0.24);box-shadow:0 0 20px rgba(125,211,252,0.34)"></div>`;
       } else html += `<div class="explosion" style="left:${center.x}px;top:${center.y}px;width:${size}px;height:${size}px;opacity:${alpha}"></div>`;
