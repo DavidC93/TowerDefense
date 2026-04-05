@@ -293,6 +293,9 @@ export function createSimulation(api) {
     }
     return { damageBuffPct, fireRateBuffPct };
   }
+  function clampTowerBonusPct(totalBonusPct) {
+    return Math.max(0, Math.min(100, Number(totalBonusPct || 0)));
+  }
   function getTowerDamage(tower, tileType, x, y) {
     const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
@@ -300,7 +303,8 @@ export function createSimulation(api) {
     if (tileType === TILE.TOWER_BUFFER || x == null || y == null) return baseDamage;
     const buffs = getAdjacentBuffs(x, y);
     const passiveBonus = getPassiveBonusPct('tower_damage');
-    return Math.round(baseDamage * (1 + (buffs.damageBuffPct + passiveBonus) / 100));
+    const totalBonusPct = clampTowerBonusPct(buffs.damageBuffPct + passiveBonus);
+    return Math.round(baseDamage * (1 + totalBonusPct / 100));
   }
   function getTowerSlowPct(tower, tileType) {
     const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
@@ -312,12 +316,20 @@ export function createSimulation(api) {
     if (!cfg) return 0;
     const buffs = tileType === TILE.TOWER_BUFFER ? { fireRateBuffPct: 0 } : getAdjacentBuffs(x, y);
     const passiveBonus = getPassiveBonusPct('tower_fire_rate');
-    const totalBonusPct = buffs.fireRateBuffPct + passiveBonus;
+    const totalBonusPct = clampTowerBonusPct(buffs.fireRateBuffPct + passiveBonus);
     return Math.max(1, Number(cfg.fireRate || 60) * (1 + (totalBonusPct / 100)));
+  }
+  function getTowerDps(tower, tileType, x, y) {
+    return (getTowerDamage(tower, tileType, x, y) * getTowerFireRate(tower, tileType, x, y)) / 60;
   }
   function getTowerFireInterval(tower, tileType, x, y) {
     const rpm = getTowerFireRate(tower, tileType, x, y);
     return Math.max(0.04, 60 / Math.max(1, rpm));
+  }
+  function getTowerSplashRadius(tower, tileType) {
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
+    if (!cfg) return 0;
+    return Number(cfg.splashRadius || 0);
   }
   function pointLineDistance(px, py, x1, y1, x2, y2) {
     const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
@@ -460,6 +472,7 @@ export function createSimulation(api) {
     } else state.intermission = 0;
   }
 
-  return { ACTIVE_SKILL_KEYS, PASSIVE_SKILL_KEYS, castPendingSkillAt, chooseSkill, clearPendingTargetSkill, cloneGrid, createInitialState, findPath, getActiveSkillDamageMultiplier, getActiveSkillStats, getAdjacentBuffs, getEnemyLevelForWave, getPassiveBonusPct, getSkillDefinition, getSkillLevel, getTowerDamage, getTowerFireInterval, getTowerFireRate, getTowerRange, getTowerSlowPct, getWaveEnemyCount, isTowerUnlocked, keyOf, rebuildAllEnemyPaths, setPendingTargetSkill, spawnEnemy, update };
+  return { ACTIVE_SKILL_KEYS, PASSIVE_SKILL_KEYS, castPendingSkillAt, chooseSkill, clearPendingTargetSkill, cloneGrid, createInitialState, findPath, getActiveSkillDamageMultiplier, getActiveSkillStats, getAdjacentBuffs, getEnemyLevelForWave, getPassiveBonusPct, getSkillDefinition, getSkillLevel, getTowerDamage, getTowerDps, getTowerFireInterval, getTowerFireRate, getTowerRange, getTowerSlowPct, getTowerSplashRadius, getWaveEnemyCount, isTowerUnlocked, keyOf, rebuildAllEnemyPaths, setPendingTargetSkill, spawnEnemy, update };
 }
+
 

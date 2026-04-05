@@ -823,6 +823,9 @@ function createSimulation(api) {
     }
     return { damageBuffPct, fireRateBuffPct };
   }
+  function clampTowerBonusPct(totalBonusPct) {
+    return Math.max(0, Math.min(100, Number(totalBonusPct || 0)));
+  }
   function getTowerDamage(tower, tileType, x, y) {
     const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
     if (!cfg) return 0;
@@ -830,7 +833,8 @@ function createSimulation(api) {
     if (tileType === TILE.TOWER_BUFFER || x == null || y == null) return baseDamage;
     const buffs = getAdjacentBuffs(x, y);
     const passiveBonus = getPassiveBonusPct('tower_damage');
-    return Math.round(baseDamage * (1 + (buffs.damageBuffPct + passiveBonus) / 100));
+    const totalBonusPct = clampTowerBonusPct(buffs.damageBuffPct + passiveBonus);
+    return Math.round(baseDamage * (1 + totalBonusPct / 100));
   }
   function getTowerSlowPct(tower, tileType) {
     const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
@@ -842,12 +846,20 @@ function createSimulation(api) {
     if (!cfg) return 0;
     const buffs = tileType === TILE.TOWER_BUFFER ? { fireRateBuffPct: 0 } : getAdjacentBuffs(x, y);
     const passiveBonus = getPassiveBonusPct('tower_fire_rate');
-    const totalBonusPct = buffs.fireRateBuffPct + passiveBonus;
+    const totalBonusPct = clampTowerBonusPct(buffs.fireRateBuffPct + passiveBonus);
     return Math.max(1, Number(cfg.fireRate || 60) * (1 + (totalBonusPct / 100)));
+  }
+  function getTowerDps(tower, tileType, x, y) {
+    return (getTowerDamage(tower, tileType, x, y) * getTowerFireRate(tower, tileType, x, y)) / 60;
   }
   function getTowerFireInterval(tower, tileType, x, y) {
     const rpm = getTowerFireRate(tower, tileType, x, y);
     return Math.max(0.04, 60 / Math.max(1, rpm));
+  }
+  function getTowerSplashRadius(tower, tileType) {
+    const cfg = getTowerRuntimeConfig(getConfig(), tower, tileType);
+    if (!cfg) return 0;
+    return Number(cfg.splashRadius || 0);
   }
   function pointLineDistance(px, py, x1, y1, x2, y2) {
     const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
@@ -990,7 +1002,7 @@ function createSimulation(api) {
     } else state.intermission = 0;
   }
 
-  return { ACTIVE_SKILL_KEYS, PASSIVE_SKILL_KEYS, castPendingSkillAt, chooseSkill, clearPendingTargetSkill, cloneGrid, createInitialState, findPath, getActiveSkillDamageMultiplier, getActiveSkillStats, getAdjacentBuffs, getEnemyLevelForWave, getPassiveBonusPct, getSkillDefinition, getSkillLevel, getTowerDamage, getTowerFireInterval, getTowerFireRate, getTowerRange, getTowerSlowPct, getWaveEnemyCount, isTowerUnlocked, keyOf, rebuildAllEnemyPaths, setPendingTargetSkill, spawnEnemy, update };
+  return { ACTIVE_SKILL_KEYS, PASSIVE_SKILL_KEYS, castPendingSkillAt, chooseSkill, clearPendingTargetSkill, cloneGrid, createInitialState, findPath, getActiveSkillDamageMultiplier, getActiveSkillStats, getAdjacentBuffs, getEnemyLevelForWave, getPassiveBonusPct, getSkillDefinition, getSkillLevel, getTowerDamage, getTowerDps, getTowerFireInterval, getTowerFireRate, getTowerRange, getTowerSlowPct, getTowerSplashRadius, getWaveEnemyCount, isTowerUnlocked, keyOf, rebuildAllEnemyPaths, setPendingTargetSkill, spawnEnemy, update };
 }
 
 const RENDER_ACTIVE_SKILL_KEYS = ['toxic_gas', 'glue_bomb', 'phosphorus_bomb'];
@@ -1225,12 +1237,26 @@ function createRenderer(api) {
       const buffs = simulation.getAdjacentBuffs(selected.x, selected.y);
       const nextBaseDamage = Math.round(Number(tower.baseDamage ?? tower.damage) * (1 + Number(cfg.upgradeDamagePct ?? 20) / 100));
       const slowNow = simulation.getTowerSlowPct(tower, tower.type), slowNext = Number(cfg.slowPct || 0) + ((Number(tower.level || 0) + 1) * Number(cfg.slowUpgradePct || 0));
-      const nextDamageText = tower.premiumKey ? 'MAX' : (upgrade.mode === 'premium' ? `${Math.round(Number(upgrade.premiumConfig.damage || 0) * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}` : `${Math.round(nextBaseDamage * (1 + (buffs.damageBuffPct + simulation.getPassiveBonusPct('tower_damage')) / 100))}`);
+      const passiveDamageBonus = simulation.getPassiveBonusPct('tower_damage');
+      const passiveFireRateBonus = simulation.getPassiveBonusPct('tower_fire_rate');
+      const passiveRangeBonus = simulation.getPassiveBonusPct('tower_range');
+      const passiveMoneyBonus = simulation.getPassiveBonusPct('tower_money');
+      const damageBonusPct = Math.max(0, Math.min(100, buffs.damageBuffPct + passiveDamageBonus));
+      const fireRateBonusPct = Math.max(0, Math.min(100, buffs.fireRateBuffPct + passiveFireRateBonus));
+      const currentDamage = simulation.getTowerDamage(tower, tower.type, selected.x, selected.y);
+      const currentFireRate = simulation.getTowerFireRate(tower, tower.type, selected.x, selected.y);
+      const currentDps = simulation.getTowerDps(tower, tower.type, selected.x, selected.y);
+      const splashRadius = simulation.getTowerSplashRadius(tower, tower.type);
+      const baseDamage = Number(tower.baseDamage ?? tower.damage ?? cfg.damage ?? 0);
+      const baseFireRate = Number(cfg.fireRate || 60);
+      const damageBonusValue = Math.max(0, currentDamage - baseDamage);
+      const fireRateBonusValue = Math.max(0, currentFireRate - baseFireRate);
+      const nextDamageText = tower.premiumKey ? 'MAX' : (upgrade.mode === 'premium' ? `${Math.round(Number(upgrade.premiumConfig.damage || 0) * (1 + damageBonusPct / 100))}` : `${Math.round(nextBaseDamage * (1 + damageBonusPct / 100))}`);
       const upgradeLabel = tower.premiumKey ? 'סטטוס שדרוג' : (upgrade.mode === 'premium' ? 'עלות פרימיום' : 'עלות שדרוג');
       const upgradeCostText = tower.premiumKey ? 'לא ניתן' : (upgrade.disabled && upgrade.reason === 'limit' ? 'תפוס' : `${cost}$`);
-      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tower.type, tower)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.premiumKey ? 'פרימיום' : `${tower.level || 0} / ${maxLevel}`}</div></div><div class="panel-stat"><div class="panel-label">נזק עכשיו</div><div class="panel-value">${simulation.getTowerDamage(tower, tower.type, selected.x, selected.y)}</div></div><div class="panel-stat"><div class="panel-label">קצב אש</div><div class="panel-value">${simulation.getTowerFireRate(tower, tower.type, selected.x, selected.y).toFixed(1).replace(/\.0$/, '')} יריות לדקה</div></div><div class="panel-stat"><div class="panel-label">${upgrade.mode === 'premium' ? 'נזק בפרימיום' : 'נזק אחרי שדרוג'}</div><div class="panel-value">${nextDamageText}</div></div><div class="panel-stat"><div class="panel-label">טווח</div><div class="panel-value">${simulation.getTowerRange(tower, tower.type).toFixed(2).replace(/\.00$/, '')}</div></div>${cfg.slowPct ? `<div class="panel-stat"><div class="panel-label">האטה עכשיו</div><div class="panel-value">${slowNow}%</div></div><div class="panel-stat"><div class="panel-label">האטה אחרי שדרוג</div><div class="panel-value">${slowNext}%</div></div>` : ''}${cfg.burnDps ? `<div class="panel-stat"><div class="panel-label">שריפה</div><div class="panel-value">${Number(cfg.burnDps || 0)} DPS / ${Number(cfg.burnDuration || 0)} שנ'</div></div>` : ''}<div class="panel-stat"><div class="panel-label">${upgradeLabel}</div><div class="panel-value">${upgradeCostText}</div></div>`;
+      inner = `<div class="panel-stat"><div class="panel-label">מבנה</div><div class="panel-value">${towerName(tower.type, tower)}</div></div><div class="panel-stat"><div class="panel-label">רמה נוכחית</div><div class="panel-value">${tower.premiumKey ? 'פרימיום' : `${tower.level || 0} / ${maxLevel}`}</div></div><div class="panel-stat"><div class="panel-label">נזק עכשיו</div><div class="panel-value">${currentDamage}${damageBonusValue > 0 ? ` <span class="panel-upgrade-value">(${damageBonusValue} ↑)</span>` : ""}</div></div><div class="panel-stat"><div class="panel-label">קצב אש</div><div class="panel-value">${currentFireRate.toFixed(1).replace(/\.0$/, '')} יריות לדקה${fireRateBonusValue > 0 ? ` <span class="panel-upgrade-value">(${fireRateBonusValue.toFixed(1).replace(/\.0$/, '')} ↑)</span>` : ""}</div></div><div class="panel-stat"><div class="panel-label">DPS</div><div class="panel-value">${currentDps.toFixed(1).replace(/\.0$/, '')}</div></div><div class="panel-stat"><div class="panel-label">${upgrade.mode === 'premium' ? 'נזק בפרימיום' : 'נזק אחרי שדרוג'}</div><div class="panel-value">${nextDamageText}</div></div><div class="panel-stat"><div class="panel-label">טווח</div><div class="panel-value">${simulation.getTowerRange(tower, tower.type).toFixed(2).replace(/\.00$/, '')}</div></div>${splashRadius > 0 ? `<div class="panel-stat"><div class="panel-label">איזור פיצוץ</div><div class="panel-value">${splashRadius.toFixed(2).replace(/\.00$/, '')}</div></div>` : ''}${cfg.slowPct ? `<div class="panel-stat"><div class="panel-label">האטה עכשיו</div><div class="panel-value">${slowNow}%</div></div><div class="panel-stat"><div class="panel-label">האטה אחרי שדרוג</div><div class="panel-value">${slowNext}%</div></div>` : ''}${cfg.burnDps ? `<div class="panel-stat"><div class="panel-label">שריפה</div><div class="panel-value">${Number(cfg.burnDps || 0)} DPS / ${Number(cfg.burnDuration || 0)} שנ'</div></div>` : ''}<div class="panel-stat"><div class="panel-label">${upgradeLabel}</div><div class="panel-value">${upgradeCostText}</div></div>`;
       if (tower.premiumKey) inner += `<div class="panel-stat premium-summary"><div class="panel-label">סוג</div><div class="panel-value">מגדל פרימיום פעיל</div></div>`;
-      if (buffs.damageBuffPct || buffs.fireRateBuffPct || simulation.getPassiveBonusPct('tower_damage') || simulation.getPassiveBonusPct('tower_fire_rate') || simulation.getPassiveBonusPct('tower_range') || simulation.getPassiveBonusPct('tower_money')) inner += `<div class="panel-stat"><div class="panel-label">בונוסים פעילים</div><div class="panel-value">הילה: נזק +${buffs.damageBuffPct}% | קצב +${buffs.fireRateBuffPct}%<br />סקילים: נזק +${simulation.getPassiveBonusPct('tower_damage')}% | קצב +${simulation.getPassiveBonusPct('tower_fire_rate')}% | טווח +${simulation.getPassiveBonusPct('tower_range')}% | כסף +${simulation.getPassiveBonusPct('tower_money')}%</div></div>`;
+      if (damageBonusPct || fireRateBonusPct || passiveRangeBonus || passiveMoneyBonus) inner += `<div class="panel-stat"><div class="panel-label">בונוסים פעילים</div><div class="panel-value">נזק +${damageBonusPct}% | קצב +${fireRateBonusPct}% | טווח +${passiveRangeBonus}% | כסף +${passiveMoneyBonus}%</div></div>`;
     }
     dom.unitPanelContentEl.className = '';
     const buttonDisabled = upgrade.disabled ? 'disabled' : '';
